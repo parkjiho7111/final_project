@@ -13,12 +13,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <script src="/static/script.js" defer></script>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
-    <script src="/static/script.js" defer></script>
     <script src="/static/script.js" defer></script>
 
     <script>
@@ -78,6 +73,11 @@
             transform-style: preserve-3d;
             transform: translateZ(20px);
         }
+
+        #region-btn {
+            background-color: rgba(255, 255, 255, 1);
+            color: rgba(81, 82, 81, 1);
+        }
     </style>
 </head>
 
@@ -91,18 +91,50 @@
             <p class="text-gray-500 text-lg mb-5">마우스를 올려보세요! 화면 크기에 맞춰 카드가 반응합니다.</p>
 
             <div class="max-w-2xl mx-auto mb-6">
-                <div
-                    class="relative flex items-center w-full h-14 rounded-full focus-within:shadow-lg bg-white overflow-hidden border border-gray-200 shadow-sm transition-shadow duration-300">
-                    <div class="grid place-items-center h-full w-12 text-gray-400">
-                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                <div class="flex items-center gap-2">
+                    <div
+                        class="relative flex items-center flex-1 h-14 rounded-full focus-within:shadow-lg bg-white overflow-visible border border-gray-200 shadow-sm transition-shadow duration-300">
+                        <div class="grid place-items-center h-full w-12 text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass text-lg ml-2"></i>
+                        </div>
+                        <input
+                            class="peer h-full w-full outline-none pr-44 pl-2 text-base bg-transparent placeholder-gray-400"
+                            style="color: #1f2937;" type="text" id="search-input"
+                            placeholder="키워드를 입력해보세요( 인기검색어: 주거지원, 취업)" />
+                        <button id="clear-btn"
+                            class="hidden absolute right-44 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors z-10">
+                            <i class="fa-solid fa-circle-xmark text-xl"></i>
+                        </button>
+                        <!-- 지역 버튼 -->
+                        <button id="region-btn"
+                            class="shrink-0 px-4 py-2 my-1 rounded-lg text-gray-600 text-sm font-bold hover:bg-green-50 hover:text-green-500 transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-map"></i> 지역
+                        </button>
+                        <!-- 구분선 -->
+                        <div class="h-8 w-px bg-gray-200 mx-2 flex-shrink-0"></div>
+                        <!-- 정렬 버튼 -->
+                        <button id="sort-btn"
+                            class="shrink-0 py-2 h-full text-gray-600 text-sm font-bold transition-all flex items-center gap-1"
+                            style="min-width: 73px; width: 73px; padding-left: 6px; padding-right: 4px;">
+                            <i class="fa-solid fa-sort" style="flex-shrink: 0;"></i> <span class="sort-text"
+                                style="display: inline-block; width: 3ch; text-align: left; flex: 1;">정렬</span>
+                        </button>
+
+                        <!-- 최근 검색어 목록 -->
+                        <div id="recent-searches"
+                            class="hidden absolute top-full left-0 w-1/2 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                            <div class="flex items-center justify-between p-3 border-b border-gray-100">
+                                <h4 class="text-xs font-semibold text-gray-500 uppercase">최근 검색어</h4>
+                                <button id="clear-all-searches"
+                                    class="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                                    전부 삭제
+                                </button>
+                            </div>
+                            <div id="recent-searches-list" class="p-2">
+                                <!-- 검색어 목록이 여기에 동적으로 추가됩니다 -->
+                            </div>
+                        </div>
                     </div>
-                    <input class="peer h-full w-full outline-none pr-12 text-base bg-transparent placeholder-gray-400"
-                        style="color: #1f2937;" type="text" id="search-input"
-                        placeholder="키워드를 입력해보세요 (예: 청년, 월세, 취업)" />
-                    <button id="clear-btn"
-                        class="hidden absolute right-4 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors">
-                        <i class="fa-solid fa-circle-xmark text-xl"></i>
-                    </button>
                 </div>
             </div>
 
@@ -160,10 +192,116 @@
         </div>
     </main>
 
+    <!-- 지역 선택 모달 -->
+    <div id="region-modal"
+        class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 hidden opacity-0 transition-opacity duration-300">
+        <div
+            class="bg-white rounded-3xl shadow-2xl p-8 max-w-4xl w-full mx-4 transform scale-95 transition-transform duration-300 relative">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-extrabold text-gray-900">대상 지역 선택</h3>
+                <button id="region-modal-close" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- 반응형 그리드: 모바일 4컬럼, 태블릿 6컬럼, PC 10컬럼 -->
+            <div class="grid gap-2 grid-cols-4 sm:grid-cols-6 lg:grid-cols-10 auto-rows-fr">
+                <!-- 전체 버튼: 세로로 2줄 통합 (row-span-2) -->
+                <button
+                    class="region-option-btn w-full px-3 py-4 sm:px-5 sm:py-5 rounded-lg bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2 row-span-2"
+                    data-region="전체">전체</button>
+
+                <!-- 첫 번째 행: 전국 서울 경기 인천 경북 대구 경남 부산 울산 (9개) -->
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="전국">전국</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="서울">서울</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="경기">경기</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="인천">인천</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="경북">경북</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="대구">대구</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="경남">경남</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="부산">부산</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="울산">울산</button>
+
+                <!-- 두 번째 행: 전남 광주 전북 강원 충남 충북 대전 세종 제주 (9개) -->
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="전남">전남</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="광주">광주</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="전북">전북</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="강원">강원</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="충남">충남</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="충북">충북</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="대전">대전</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="세종">세종</button>
+                <button
+                    class="region-option-btn w-full px-3 py-2.5 sm:px-5 sm:py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-region="제주">제주</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 정렬 선택 모달 -->
+    <div id="sort-modal"
+        class="fixed inset-0 z-[9999] bg-transparent hidden opacity-0 transition-opacity duration-300 pointer-events-none">
+        <!-- 버튼과 모달 사이의 보이지 않는 연결 영역 -->
+        <div id="sort-modal-bridge" class="absolute pointer-events-auto" style="background: transparent;"></div>
+        <div id="sort-modal-content"
+            class="bg-white rounded-3xl shadow-2xl p-6 w-48 sm:w-48 transform scale-95 transition-transform duration-300 absolute pointer-events-auto">
+            <div class="flex flex-col gap-2">
+                <button
+                    class="sort-option-btn w-full px-5 py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-sort="latest">최신순</button>
+                <button
+                    class="sort-option-btn w-full px-5 py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-sort="popular">인기순</button>
+                <button
+                    class="sort-option-btn w-full px-5 py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-sort="deadline">마감순</button>
+                <button
+                    class="sort-option-btn w-full px-5 py-2.5 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-bold hover:bg-[#DDDEF8] hover:text-gray-700 hover:border-[#DDDEF8] transition-all flex items-center justify-center gap-2"
+                    data-sort="reset">원래대로</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- 1. 설정 및 유틸리티 ---
         const ITEMS_PER_PAGE = 8;
         let currentPage = 1;
+        let currentCategoryFilter = 'all'; // 현재 선택된 카테고리 필터 저장
+        let currentRegionFilter = null; // 현재 선택된 지역 필터 저장 (null = 전체)      
 
         const debounce = (func, delay) => {
             let timeoutId;
@@ -173,41 +311,242 @@
             };
         };
 
-        // --- 2. 데이터 및 이미지 설정 ---
-        const categoryMap = { "주거": "housing", "취업": "job", "금융": "finance", "복지": "welfare", "창업": "startup", "교육": "growth" };
+        // --- 1-1. 최근 검색어 관리 (localStorage) ---
+        const RECENT_SEARCHES_KEY = 'recent_searches';
+        const MAX_RECENT_SEARCHES = 5;
 
-        const baseData = [
-            { id: 1, title: "청년 안심 주택", category: "주거", desc: "역세권 청년 주택 입주자 모집 공고", colorCode: "#F48245" },
-            { id: 2, title: "취업 사관학교", category: "취업", desc: "SW 개발자 데뷔 과정 무료 교육생 모집", colorCode: "#4A9EA8" },
-            { id: 3, title: "학자금 대출 이자", category: "금융", desc: "학자금 대출 이자 전액 지원", colorCode: "#D9B36C" },
-            { id: 4, title: "마음 건강 상담소", category: "복지", desc: "전문 심리 상담사와 1:1 무료 상담", colorCode: "#9F7AEA" },
-            { id: 5, title: "전세 보증금 반환", category: "주거", desc: "전세 사기 걱정 없는 보증료 지원", colorCode: "#F48245" },
-            { id: 6, title: "미래 청년 일자리", category: "취업", desc: "신산업 분야 기업 매칭 및 인건비 지원", colorCode: "#4A9EA8" },
-            { id: 7, title: "문화 예술 패스", category: "복지", desc: "공연, 전시 관람비 10만원 지원", colorCode: "#9F7AEA" },
-            { id: 8, title: "청년 대중교통비", category: "금융", desc: "대중교통 이용요금 일부 환급", colorCode: "#D9B36C" },
-            { id: 9, title: "창업 런웨이", category: "창업", desc: "스타트업 초기 자금 지원 및 멘토링", colorCode: "#FF5A5F" },
-            { id: 10, title: "글로벌 인재 양성", category: "교육", desc: "해외 연수 및 어학 프로그램 지원", colorCode: "#4299E1" },
-            { id: 11, title: "청년 저축 계좌", category: "금융", desc: "매월 10만원 저축 시 정부 지원금 매칭", colorCode: "#D9B36C" },
-            { id: 12, title: "1인 가구 병원 동행", category: "복지", desc: "아플 때 병원까지 매니저 동행 서비스", colorCode: "#9F7AEA" },
-            { id: 13, title: "청년 농부 지원", category: "창업", desc: "귀농 귀촌 정착금 및 농지 임대 지원", colorCode: "#FF5A5F" },
-            { id: 14, title: "디지털 배움터", category: "교육", desc: "전 국민 디지털 역량 강화 무료 교육", colorCode: "#4299E1" },
-            { id: 15, title: "행복 기숙사", category: "주거", desc: "대학생 연합 기숙사 입주 신청", colorCode: "#F48245" }
-        ];
-
-        const categoryCounters = {};
-
-        const policyData = baseData.map(item => {
-            const prefix = categoryMap[item.category] || "welfare";
-            if (categoryCounters[item.category] === undefined) {
-                categoryCounters[item.category] = 0;
+        // 최근 검색어 가져오기
+        function getRecentSearches() {
+            try {
+                const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
+                return stored ? JSON.parse(stored) : [];
+            } catch (e) {
+                console.error('최근 검색어 불러오기 실패:', e);
+                return [];
             }
-            const count = categoryCounters[item.category];
-            const imgIndex = (count % 5) + 1;
-            categoryCounters[item.category]++;
+        }
 
-            item.img = `/static/images/card_images/${prefix}_${imgIndex}.webp`;
-            return item;
-        });
+        // 최근 검색어 저장하기
+        function saveRecentSearch(keyword) {
+            if (!keyword || keyword.trim() === '') return;
+
+            const trimmedKeyword = keyword.trim();
+            let searches = getRecentSearches();
+
+            // 중복 제거 (기존 항목이 있으면 제거)
+            searches = searches.filter(s => s !== trimmedKeyword);
+
+            // 맨 앞에 추가
+            searches.unshift(trimmedKeyword);
+
+            // 최대 개수 제한
+            if (searches.length > MAX_RECENT_SEARCHES) {
+                searches = searches.slice(0, MAX_RECENT_SEARCHES);
+            }
+
+            try {
+                localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches));
+            } catch (e) {
+                console.error('최근 검색어 저장 실패:', e);
+            }
+        }
+
+        // 최근 검색어 삭제하기
+        function deleteRecentSearch(keyword) {
+            let searches = getRecentSearches();
+            searches = searches.filter(s => s !== keyword);
+
+            try {
+                localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches));
+            } catch (e) {
+                console.error('최근 검색어 삭제 실패:', e);
+            }
+
+            renderRecentSearches();
+        }
+
+        // 최근 검색어 전부 삭제하기
+        function clearAllRecentSearches() {
+            try {
+                localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify([]));
+                hideRecentSearches();
+            } catch (e) {
+                console.error('최근 검색어 전부 삭제 실패:', e);
+            }
+        }
+
+        // 최근 검색어 목록 렌더링
+        function renderRecentSearches() {
+            const recentSearchesList = document.getElementById('recent-searches-list');
+            const recentSearchesContainer = document.getElementById('recent-searches');
+
+            if (!recentSearchesList || !recentSearchesContainer) return;
+
+            const searches = getRecentSearches();
+
+            if (searches.length === 0) {
+                recentSearchesContainer.classList.add('hidden');
+                return;
+            }
+
+            recentSearchesList.innerHTML = '';
+
+            searches.forEach(keyword => {
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-start px-3 py-2 hover:bg-gray-50 rounded-md cursor-pointer group';
+
+                const keywordSpan = document.createElement('span');
+                keywordSpan.className = 'text-sm text-gray-700';
+                keywordSpan.textContent = keyword;
+                keywordSpan.addEventListener('click', async () => {
+                    const searchInput = document.getElementById('search-input');
+                    if (searchInput) {
+                        searchInput.value = keyword;
+                        // 검색 실행
+                        await renderCards(currentCategoryFilter, keyword, false, selectedSortValue);
+                    }
+                    hideRecentSearches();
+                });
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'ml-2 text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity';
+                deleteBtn.innerHTML = '<i class="fa-solid fa-xmark text-xs"></i>';
+                deleteBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    deleteRecentSearch(keyword);
+                });
+
+                item.appendChild(keywordSpan);
+                item.appendChild(deleteBtn);
+                recentSearchesList.appendChild(item);
+            });
+        }
+
+        // 최근 검색어 목록 표시 (저장된 검색어가 1개 이상일 때 표시)
+        function showRecentSearches() {
+            const recentSearchesContainer = document.getElementById('recent-searches');
+            if (recentSearchesContainer) {
+                const searches = getRecentSearches();
+                // 검색어가 1개 이상 저장되어 있으면 표시 (처음 검색 후부터 이전 검색어가 있으면 표시)
+                if (searches.length >= 1) {
+                    renderRecentSearches();
+                    recentSearchesContainer.classList.remove('hidden');
+                } else {
+                    recentSearchesContainer.classList.add('hidden');
+                }
+            }
+        }
+
+        // 최근 검색어 목록 숨김
+        function hideRecentSearches() {
+            const recentSearchesContainer = document.getElementById('recent-searches');
+            if (recentSearchesContainer) {
+                recentSearchesContainer.classList.add('hidden');
+            }
+        }
+
+        // --- 2. 카테고리 색상 매핑 (이미지 매핑용) ---
+        const categoryMap = {
+            "주거": "housing", "주거/자립": "housing",
+            "취업": "job", "취업/직무": "job",
+            "금융": "finance", "금융/생활비": "finance",
+            "복지": "welfare", "복지/문화": "welfare",
+            "창업": "startup", "창업/사업": "startup",
+            "교육": "growth", "교육/자격증": "growth"
+        };
+
+        // --- 2-1. API에서 정책 데이터 가져오기 ---
+        let policyData = [];
+
+        async function fetchPolicyData(category = "all", keyword = "", sort = null, region = null) {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) loadingIndicator.classList.remove('hidden');
+
+            try {
+                // API 호출 파라미터 구성
+                const params = new URLSearchParams();
+                // 전체보기 페이지에서는 category=all을 명시적으로 전달하여 검색/전체보기 로직으로 처리
+                if (category) {
+                    params.append('category', category);
+                }
+                if (keyword) {
+                    params.append('keyword', keyword);
+                }
+                if (sort) {
+                    params.append('sort', sort);
+                }
+                // 전체 선택 시 region 파라미터를 전달하지 않음 (null이면 전달 안 함)
+                if (region && region !== '전체') {
+                    params.append('region', region);
+                }
+
+                const url = `/api/cards?${params.toString()}`;
+                console.log(`🌐 API 호출: ${url}`);
+                console.log(`   - 카테고리: ${category}`);
+                console.log(`   - 검색어: ${keyword}`);
+                console.log(`   - 지역: ${region || '전체'}`);
+                console.log(`   - 정렬: ${sort}`);
+
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // API 응답이 배열인지 확인
+                if (!Array.isArray(data)) {
+                    console.error('API 응답이 배열이 아닙니다:', data);
+                    policyData = [];
+                    return [];
+                }
+
+                // 반환된 데이터의 카테고리 분포 확인
+                if (data.length > 0) {
+                    const categoryDist = {};
+                    data.forEach(item => {
+                        const cat = item.category || 'Unknown';
+                        categoryDist[cat] = (categoryDist[cat] || 0) + 1;
+                    });
+                    console.log(`📊 API 응답 카테고리 분포:`, categoryDist);
+                }
+
+                // API 응답 데이터를 프론트엔드 형식으로 매핑
+                policyData = data.map(item => {
+                    try {
+                        // 카테고리에 맞는 이미지 경로 생성
+                        const prefix = categoryMap[item.category] || "welfare";
+                        const imgIndex = ((item.id || 1) % 5) + 1; // ID 기반으로 이미지 선택
+
+                        return {
+                            id: item.id || 0,
+                            title: item.title || "",
+                            desc: item.desc || item.summary || "상세 내용을 확인하세요.",
+                            category: item.category || item.genre || "기타",
+                            date: item.date || "상시 모집",
+                            image: item.image || `/static/images/card_images/${prefix}_${imgIndex}.webp`,
+                            link: item.link || "#",
+                            colorCode: item.colorCode || "#777777",
+                            img: item.image || `/static/images/card_images/${prefix}_${imgIndex}.webp`
+                        };
+                    } catch (itemError) {
+                        console.error('아이템 매핑 오류:', itemError, item);
+                        return null;
+                    }
+                }).filter(item => item !== null); // null 항목 제거
+
+                console.log(`✅ 데이터 로드 완료: 총 ${policyData.length}개의 정책 (예상 페이지: ${Math.ceil(policyData.length / ITEMS_PER_PAGE)}페이지)`);
+
+                return policyData;
+            } catch (error) {
+                console.error('데이터 로드 오류:', error);
+                policyData = [];
+                return [];
+            } finally {
+                if (loadingIndicator) loadingIndicator.classList.add('hidden');
+            }
+        }
 
         // --- 3. 3D 효과 함수 ---
         function init3DEffect() {
@@ -252,59 +591,134 @@
         }
 
         function playEntranceAnimation() {
+            const cardLifters = document.querySelectorAll(".card-lifter");
+            if (cardLifters.length === 0) {
+                console.warn("playEntranceAnimation: .card-lifter 요소를 찾을 수 없습니다.");
+                return;
+            }
             gsap.from(".card-lifter", {
                 y: 50, opacity: 0, duration: 0.6, stagger: 0.05, ease: "power2.out", clearProps: "all"
             });
         }
 
-        // --- 4. 페이지네이션 렌더링 함수 ---
+        // --- 4. 페이지네이션 렌더링 함수 (스마트 페이지네이션) ---
         function renderPagination(totalItems) {
             const paginationContainer = document.getElementById('pagination-container');
             paginationContainer.innerHTML = "";
 
             const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+            console.log(`📄 페이지네이션: 총 ${totalItems}개 항목, ${totalPages}페이지 생성`);
             if (totalPages <= 1) return;
 
-            for (let i = 1; i <= totalPages; i++) {
+            const baseClass = "w-10 h-10 rounded-full text-sm font-bold transition-all flex items-center justify-center border";
+            const activeClass = `${baseClass} bg-[#777777] text-white border-[#777777] shadow-md transform scale-105`;
+            const inactiveClass = `${baseClass} bg-white text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-primary-teal`;
+            const navClass = "px-4 h-10 rounded-full text-sm font-bold transition-all flex items-center justify-center border bg-white text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-primary-teal";
+
+            // 페이지 번호를 클릭했을 때 실행할 함수
+            const handlePageClick = async (pageNum) => {
+                currentPage = pageNum;
+                const currentCategory = currentCategoryFilter || 'all';
+                const keyword = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
+                const currentSort = selectedSortValue;
+
+                console.log(`📄 페이지 ${pageNum} 클릭:`);
+                console.log(`   - 카테고리: ${currentCategory}`);
+                console.log(`   - 검색어: ${keyword}`);
+                console.log(`   - 정렬: ${currentSort}`);
+
+                await renderCards(currentCategory, keyword, true, currentSort);
+            };
+
+            // 이전 버튼
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.innerText = '이전';
+                prevBtn.className = navClass;
+                prevBtn.addEventListener('click', async () => {
+                    await handlePageClick(currentPage - 1);
+                });
+                paginationContainer.appendChild(prevBtn);
+            }
+
+            // 페이지 번호 표시 로직
+            const delta = 2; // 현재 페이지 양옆에 표시할 페이지 수
+            let startPage = Math.max(1, currentPage - delta);
+            let endPage = Math.min(totalPages, currentPage + delta);
+
+            // 첫 페이지가 표시되지 않으면 추가
+            if (startPage > 1) {
+                const firstBtn = document.createElement('button');
+                firstBtn.innerText = '1';
+                firstBtn.className = currentPage === 1 ? activeClass : inactiveClass;
+                firstBtn.addEventListener('click', async () => await handlePageClick(1));
+                paginationContainer.appendChild(firstBtn);
+
+                if (startPage > 2) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.innerText = '...';
+                    ellipsis.className = "px-2 text-gray-500";
+                    paginationContainer.appendChild(ellipsis);
+                }
+            }
+
+            // 현재 페이지 주변 페이지들 표시
+            for (let i = startPage; i <= endPage; i++) {
                 const btn = document.createElement('button');
                 btn.innerText = i;
-                let baseClass = "w-10 h-10 rounded-full text-sm font-bold transition-all flex items-center justify-center border";
+                btn.className = i === currentPage ? activeClass : inactiveClass;
+                btn.addEventListener('click', async () => await handlePageClick(i));
+                paginationContainer.appendChild(btn);
+            }
 
-                if (i === currentPage) {
-                    btn.className = `${baseClass} bg-[#777777] text-white border-[#777777] shadow-md transform scale-105`;
-                } else {
-                    btn.className = `${baseClass} bg-white text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-primary-teal`;
+            // 마지막 페이지가 표시되지 않으면 추가
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const ellipsis = document.createElement('span');
+                    ellipsis.innerText = '...';
+                    ellipsis.className = "px-2 text-gray-500";
+                    paginationContainer.appendChild(ellipsis);
                 }
 
-                btn.addEventListener('click', () => {
-                    currentPage = i;
-                    const currentBtn = document.querySelector('.filter-btn.active');
-                    const currentCategory = currentBtn ? currentBtn.dataset.category : 'all';
-                    const keyword = document.getElementById('search-input').value;
-                    renderCards(currentCategory, keyword, true);
+                const lastBtn = document.createElement('button');
+                lastBtn.innerText = totalPages;
+                lastBtn.className = currentPage === totalPages ? activeClass : inactiveClass;
+                lastBtn.addEventListener('click', async () => await handlePageClick(totalPages));
+                paginationContainer.appendChild(lastBtn);
+            }
+
+            // 다음 버튼
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.innerText = '다음';
+                nextBtn.className = navClass;
+                nextBtn.addEventListener('click', async () => {
+                    await handlePageClick(currentPage + 1);
                 });
-                paginationContainer.appendChild(btn);
+                paginationContainer.appendChild(nextBtn);
             }
         }
 
         // --- 5. 카드 렌더링 함수 ---
-        function renderCards(filterCategory = "all", keyword = "", isPageChange = false) {
+        async function renderCards(filterCategory = "all", keyword = "", isPageChange = false, sortValue = null) {
             const container = document.getElementById('card-container');
             const noResult = document.getElementById('no-result');
 
-            const filteredData = policyData.filter(item => {
-                const matchCategory = filterCategory === "all" || item.category === filterCategory;
-                const matchKeyword = item.title.includes(keyword) || item.desc.includes(keyword) || item.category.includes(keyword);
-                return matchCategory && matchKeyword;
-            });
+            // 지역 필터 가져오기
+            const regionFilter = currentRegionFilter;
+
+            console.log(`🔄 renderCards 호출: 카테고리=${filterCategory}, 검색어=${keyword}, 지역=${regionFilter || '전체'}, 페이지변경=${isPageChange}, 정렬=${sortValue}`);
+
+            // API에서 데이터 가져오기 (정렬 및 지역 파라미터 포함)
+            await fetchPolicyData(filterCategory, keyword, sortValue, regionFilter);
 
             if (!isPageChange) currentPage = 1;
 
             const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
             const endIndex = startIndex + ITEMS_PER_PAGE;
-            const visibleData = filteredData.slice(startIndex, endIndex);
+            const visibleData = policyData.slice(startIndex, endIndex);
 
-            if (filteredData.length === 0) {
+            if (policyData.length === 0) {
                 container.innerHTML = "";
                 document.getElementById('pagination-container').innerHTML = "";
                 if (noResult) noResult.classList.remove('hidden');
@@ -315,7 +729,7 @@
             container.innerHTML = visibleData.map(item => {
                 const itemJson = encodeURIComponent(JSON.stringify(item));
                 return `
-                <div class="perspective-wrap h-full cursor-pointer group" onclick="openCardModal(this)" data-json="${itemJson}" style="z-index: 1;">
+                <div class="perspective-wrap h-full cursor-pointer group" onclick="window.open('${item.link || '#'}', '_blank')" data-json="${itemJson}" style="z-index: 1;">
                     <div class="card-lifter">
                         <div class="policy-card relative bg-white rounded-xl overflow-hidden h-full flex flex-col border border-gray-100 shadow-sm transition-colors"
                              data-color="${item.colorCode}">
@@ -325,13 +739,13 @@
                             <div class="card-content text-left bg-white flex-grow flex flex-col justify-between p-5 z-20 relative">
                                 <div>
                                     <div class="flex items-center gap-2 mb-2">
-                                        <span class="text-xs font-bold text-primary-orange bg-orange-100 px-2 py-0.5 rounded">#${item.category}</span>
+                                        <span class="text-xs font-bold text-primary-orange bg-orange-100 px-2 py-0.5 rounded">#${item.category || '기타'}</span>
                                     </div>
                                     <h3 class="card-title mb-2 line-clamp-1 text-xl font-extrabold text-[#222] group-hover:text-primary-teal transition-colors">${item.title}</h3>
-                                    <p class="card-desc line-clamp-2 text-sm text-[#666] font-medium leading-relaxed">${item.desc}</p>
+                                    <p class="card-desc line-clamp-2 text-sm text-[#666] font-medium leading-relaxed">${item.desc || '상세 내용을 확인하세요.'}</p>
                                 </div>
                                 <div class="card-date flex justify-between items-center mt-4 text-xs text-[#888] border-t pt-3 border-gray-100">
-                                    <span>2025.12.31 마감</span>
+                                    <span>${item.date || '상시 모집'}</span>
                                     <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-primary-teal transition-transform group-hover:translate-x-1"></i>
                                 </div>
                             </div>
@@ -340,15 +754,28 @@
                 </div>`;
             }).join('');
 
-            renderPagination(filteredData.length);
-            init3DEffect();
+            renderPagination(policyData.length);
+
+            // DOM 업데이트 후 실행되도록 requestAnimationFrame 사용
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    init3DEffect();
+                    // 요소가 존재하는지 확인 후 애니메이션 실행
+                    const cardLifters = document.querySelectorAll('.card-lifter');
+                    if (cardLifters.length > 0) {
+                        playEntranceAnimation();
+                    }
+                });
+            });
+
             if (isPageChange) window.scrollTo({ top: 0, behavior: 'smooth' });
-            playEntranceAnimation();
         }
 
         // --- DOMContentLoaded: 모든 로직 ---
-        document.addEventListener('DOMContentLoaded', () => {
-            renderCards("all", "", false);
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentCategoryFilter = 'all'; // 초기 카테고리 설정
+            currentRegionFilter = null; // 초기 지역 필터 설정 (전체)
+            await renderCards("all", "", false);
 
             const searchInput = document.getElementById('search-input');
             const clearBtn = document.getElementById('clear-btn');
@@ -360,26 +787,73 @@
                     else clearBtn.classList.add('hidden');
                 };
                 searchInput.addEventListener('input', toggleClearBtn);
-                clearBtn.addEventListener('click', () => {
+                clearBtn.addEventListener('click', async () => {
                     searchInput.value = '';
                     toggleClearBtn();
                     searchInput.focus();
-                    const currentBtn = document.querySelector('.filter-btn.active');
-                    const currentCategory = currentBtn ? currentBtn.dataset.category : 'all';
-                    renderCards(currentCategory, '', false);
+                    // 저장된 카테고리 필터 사용
+                    await renderCards(currentCategoryFilter, '', false);
                 });
             }
 
             if (searchInput) {
-                searchInput.addEventListener('input', debounce((e) => {
-                    const currentBtn = document.querySelector('.filter-btn.active');
-                    const currentCategory = currentBtn ? currentBtn.dataset.category : 'all';
-                    renderCards(currentCategory, e.target.value, false);
+                // 엔터 키 입력 시 검색어 저장 및 검색 실행
+                searchInput.addEventListener('keydown', async (e) => {
+                    if (e.key === 'Enter') {
+                        const keyword = searchInput.value.trim();
+                        if (keyword) {
+                            saveRecentSearch(keyword);
+                            hideRecentSearches();
+                            await renderCards(currentCategoryFilter, keyword, false, selectedSortValue);
+                        }
+                    }
+                });
+
+                // 입력 시 최근 검색어 표시 (즉시 실행)
+                searchInput.addEventListener('input', (e) => {
+                    const keyword = e.target.value.trim();
+
+                    // 입력값이 비어있으면 목록 숨김
+                    if (keyword === '') {
+                        hideRecentSearches();
+                    } else {
+                        // 입력값이 있으면 최근 검색어 표시
+                        showRecentSearches();
+                    }
+                });
+
+                // 입력 시 검색 실행 (debounce) - 저장하지 않음 (엔터 키나 명시적 검색 시에만 저장)
+                searchInput.addEventListener('input', debounce(async (e) => {
+                    const keyword = e.target.value.trim();
+                    // 저장된 카테고리 필터 사용
+                    await renderCards(currentCategoryFilter, keyword, false);
                 }, 300));
             }
 
+            // 전부 삭제 버튼 이벤트 리스너
+            const clearAllSearchesBtn = document.getElementById('clear-all-searches');
+            if (clearAllSearchesBtn) {
+                clearAllSearchesBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    clearAllRecentSearches();
+                });
+            }
+
+            // 검색창 밖 클릭 시 최근 검색어 목록 숨김
+            document.addEventListener('click', (e) => {
+                const searchInput = document.getElementById('search-input');
+                const recentSearchesContainer = document.getElementById('recent-searches');
+
+                if (searchInput && recentSearchesContainer) {
+                    // 검색창이나 최근 검색어 목록 내부 클릭이 아닌 경우
+                    if (!searchInput.contains(e.target) && !recentSearchesContainer.contains(e.target)) {
+                        hideRecentSearches();
+                    }
+                }
+            });
+
             filterBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', async () => {
                     filterBtns.forEach(b => {
                         b.classList.remove('bg-[#777777]', 'text-white');
                         b.classList.add('bg-white', 'text-gray-600', 'border');
@@ -387,8 +861,13 @@
                     btn.classList.remove('bg-white', 'text-gray-600', 'border');
                     btn.classList.add('bg-[#777777]', 'text-white', 'active');
 
+                    // 현재 카테고리 필터 저장
+                    currentCategoryFilter = btn.dataset.category || 'all';
+                    console.log(`🏷️ 카테고리 버튼 클릭: ${currentCategoryFilter}`);
+
                     const keyword = searchInput ? searchInput.value : "";
-                    renderCards(btn.dataset.category, keyword, false);
+                    const currentSort = selectedSortValue; // 정렬 상태 유지
+                    await renderCards(currentCategoryFilter, keyword, false, currentSort);
                 });
             });
 
@@ -425,17 +904,411 @@
                     });
                 });
             }
-
-            // [핵심 수정 2] 기존 햄버거 메뉴 코드 삭제됨
-            // 햄버거 메뉴 로직은 이제 /static/script.js 에서 처리합니다.
         });
+
+        function openCardModal(element) {
+            console.log("모달 열기:", element.dataset.json);
+        }
+
+        // 지역 선택 모달 기능
+        const regionBtn = document.getElementById('region-btn');
+        const regionModal = document.getElementById('region-modal');
+        const regionModalClose = document.getElementById('region-modal-close');
+        const regionOptionBtns = document.querySelectorAll('.region-option-btn');
+        let selectedRegionValue = null; // 선택된 지역 저장
+
+        // 모든 지역 버튼의 선택 상태 초기화
+        function clearRegionSelection() {
+            regionOptionBtns.forEach(btn => {
+                btn.classList.remove('bg-cyan-50', 'text-cyan-500', 'border-cyan-500');
+                btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+                // 인라인 스타일 제거
+                btn.style.backgroundColor = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            });
+        }
+
+        // 특정 지역 버튼을 선택 상태로 표시
+        function setRegionSelection(region) {
+            clearRegionSelection();
+            const targetBtn = Array.from(regionOptionBtns).find(btn => btn.dataset.region === region);
+            if (targetBtn && regionBtn) {
+                // region-btn의 현재 배경색 가져오기
+                const computedStyle = window.getComputedStyle(regionBtn);
+                const regionBtnBgColor = computedStyle.backgroundColor || 'rgba(255, 255, 255, 1)';
+
+                // region-btn과 동일한 색상 적용
+                targetBtn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+                targetBtn.style.backgroundColor = regionBtnBgColor;
+                targetBtn.style.color = computedStyle.color || 'rgba(81, 82, 81, 1)';
+                targetBtn.style.borderColor = computedStyle.borderColor || '#e5e7eb';
+            }
+        }
+
+        function openRegionModal() {
+            if (!regionModal) return;
+            regionModal.classList.remove('hidden');
+            // 모달을 열 때 이전 선택 상태 복원
+            if (selectedRegionValue) {
+                setRegionSelection(selectedRegionValue);
+            }
+            setTimeout(() => {
+                regionModal.classList.remove('opacity-0');
+                const modalContent = regionModal.querySelector('.bg-white');
+                if (modalContent) {
+                    modalContent.classList.remove('scale-95');
+                    modalContent.classList.add('scale-100');
+                }
+            }, 10);
+        }
+
+        function closeRegionModal() {
+            if (!regionModal) return;
+            regionModal.classList.add('opacity-0');
+            const modalContent = regionModal.querySelector('.bg-white');
+            if (modalContent) {
+                modalContent.classList.remove('scale-100');
+                modalContent.classList.add('scale-95');
+            }
+            setTimeout(() => {
+                regionModal.classList.add('hidden');
+            }, 300);
+        }
+
+        if (regionBtn && regionModal) {
+            regionBtn.addEventListener('click', openRegionModal);
+        }
+
+        if (regionModalClose) {
+            regionModalClose.addEventListener('click', closeRegionModal);
+        }
+
+        // 배경 클릭 시 모달 닫기
+        if (regionModal) {
+            regionModal.addEventListener('click', (e) => {
+                if (e.target === regionModal) {
+                    closeRegionModal();
+                }
+            });
+        }
+
+        // 지역 선택 버튼 클릭 이벤트
+        if (regionOptionBtns.length > 0) {
+            regionOptionBtns.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const selectedRegion = btn.dataset.region;
+                    console.log('선택된 지역:', selectedRegion);
+
+                    // 선택된 지역 저장
+                    selectedRegionValue = selectedRegion;
+
+                    // 지역 필터 업데이트
+                    if (selectedRegion === '전체') {
+                        // 전체 선택 시: 모든 지역의 정책 표시 (필터 없음)
+                        currentRegionFilter = null;
+                    } else {
+                        // 특정 지역 선택 시: 해당 지역의 정책만 표시
+                        currentRegionFilter = selectedRegion;
+                    }
+
+                    // 선택된 버튼에 스타일 적용
+                    setRegionSelection(selectedRegion);
+
+                    // 지역 버튼의 텍스트를 선택한 지역 이름으로 변경 및 배경색 변경
+                    if (regionBtn) {
+                        const displayText = selectedRegion === '전체' ? '지역' : selectedRegion;
+                        regionBtn.innerHTML = `<i class="fa-solid fa-map"></i> ${displayText}`;
+                        // 전체 선택 시 배경색 초기화, 특정 지역 선택 시 색상 적용
+                        if (selectedRegion === '전체') {
+                            regionBtn.style.backgroundColor = '';
+                        } else {
+                            regionBtn.style.backgroundColor = 'rgba(221, 222, 248, 1)';
+                        }
+                    }
+
+                    closeRegionModal();
+
+                    // 지역 선택 시 카드 다시 렌더링 (현재 카테고리와 정렬 유지)
+                    const currentCategory = currentCategoryFilter || 'all';
+                    const keyword = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
+                    const currentSort = selectedSortValue;
+                    currentPage = 1; // 1페이지로 리셋
+
+                    console.log(`🗺️ 지역 필터 적용: ${currentRegionFilter || '전체'}, 카테고리=${currentCategory}, 정렬=${currentSort}`);
+                    await renderCards(currentCategory, keyword, false, currentSort);
+                });
+            });
+        }
+
+        // 정렬 선택 모달 기능
+        const sortBtn = document.getElementById('sort-btn');
+        const sortModal = document.getElementById('sort-modal');
+        const sortOptionBtns = document.querySelectorAll('.sort-option-btn');
+        let selectedSortValue = null; // 선택된 정렬 방식 저장
+        let sortModalTimeout = null; // 모달 닫기 타이머
+
+        // 모든 정렬 버튼의 선택 상태 초기화
+        function clearSortSelection() {
+            sortOptionBtns.forEach(btn => {
+                btn.classList.remove('bg-green-50', 'text-green-500', 'border-green-500');
+                btn.classList.add('bg-white', 'text-gray-600', 'border-gray-200');
+                btn.style.backgroundColor = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+            });
+        }
+
+        // 특정 정렬 버튼을 선택 상태로 표시
+        function setSortSelection(sort) {
+            clearSortSelection();
+            const targetBtn = Array.from(sortOptionBtns).find(btn => btn.dataset.sort === sort);
+            if (targetBtn && sortBtn) {
+                // sort-btn의 현재 배경색 가져오기
+                const computedStyle = window.getComputedStyle(sortBtn);
+                const sortBtnBgColor = computedStyle.backgroundColor || 'rgba(255, 255, 255, 1)';
+
+                // sort-btn과 동일한 색상 적용
+                targetBtn.classList.remove('bg-white', 'text-gray-600', 'border-gray-200');
+                targetBtn.style.backgroundColor = sortBtnBgColor;
+                targetBtn.style.color = computedStyle.color || 'rgba(81, 82, 81, 1)';
+                targetBtn.style.borderColor = computedStyle.borderColor || '#e5e7eb';
+            }
+        }
+
+        function openSortModal() {
+            if (!sortModal || !sortBtn) return;
+            // 기존 타이머 취소
+            if (sortModalTimeout) {
+                clearTimeout(sortModalTimeout);
+                sortModalTimeout = null;
+            }
+
+            const rect = sortBtn.getBoundingClientRect();
+            const modalContent = document.getElementById('sort-modal-content');
+            const modalBridge = document.getElementById('sort-modal-bridge');
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const modalWidth = 192; // w-48 = 192px
+            const modalHeight = modalContent ? modalContent.offsetHeight : 200;
+
+            if (modalContent) {
+                // 모바일 (640px 이하): 버튼 아래 중앙 정렬
+                if (windowWidth <= 640) {
+                    // 모바일에서는 모달 너비를 화면에 맞게 조정
+                    const mobileModalWidth = Math.min(modalWidth, windowWidth - 32); // 양쪽 16px 여백
+                    modalContent.style.width = `${mobileModalWidth}px`;
+
+                    const leftPosition = rect.left + (rect.width / 2) - (mobileModalWidth / 2);
+                    const topPosition = rect.bottom + 8; // 버튼 아래 8px
+
+                    // 화면 왼쪽 경계 체크
+                    const finalLeft = Math.max(16, Math.min(leftPosition, windowWidth - mobileModalWidth - 16));
+                    // 화면 아래쪽 경계 체크 - 화면 밖으로 나가면 버튼 위에 표시
+                    const finalTop = (topPosition + modalHeight > windowHeight - 16)
+                        ? rect.top - modalHeight - 8
+                        : topPosition;
+
+                    modalContent.style.top = `${finalTop}px`;
+                    modalContent.style.left = `${finalLeft}px`;
+                    modalContent.style.right = 'auto';
+                }
+                // 태블릿 (641px ~ 1024px): 가능하면 오른쪽, 안되면 왼쪽
+                else if (windowWidth <= 1024) {
+                    modalContent.style.width = `${modalWidth}px`; // 원래 너비 유지
+                    const rightSpace = windowWidth - rect.right;
+                    const leftSpace = rect.left;
+
+                    if (rightSpace >= modalWidth + 8) {
+                        // 오른쪽에 공간이 있으면 오른쪽에 표시
+                        modalContent.style.top = `${rect.top}px`;
+                        modalContent.style.left = `${rect.right + 8}px`;
+                        modalContent.style.right = 'auto';
+                    } else if (leftSpace >= modalWidth + 8) {
+                        // 왼쪽에 공간이 있으면 왼쪽에 표시
+                        modalContent.style.top = `${rect.top}px`;
+                        modalContent.style.left = 'auto';
+                        modalContent.style.right = `${windowWidth - rect.left + 8}px`;
+                    } else {
+                        // 양쪽 모두 공간이 없으면 버튼 아래 중앙
+                        const leftPosition = rect.left + (rect.width / 2) - (modalWidth / 2);
+                        modalContent.style.top = `${rect.bottom + 8}px`;
+                        modalContent.style.left = `${Math.max(8, Math.min(leftPosition, windowWidth - modalWidth - 8))}px`;
+                        modalContent.style.right = 'auto';
+                    }
+                }
+                // PC (1024px 이상): 오른쪽에 표시, 화면 밖으로 나가면 조정
+                else {
+                    modalContent.style.width = `${modalWidth}px`; // 원래 너비 유지
+                    const rightSpace = windowWidth - rect.right;
+
+                    if (rightSpace >= modalWidth + 8) {
+                        // 오른쪽에 충분한 공간이 있으면 오른쪽에 표시
+                        modalContent.style.top = `${rect.top}px`;
+                        modalContent.style.left = `${rect.right + 8}px`;
+                        modalContent.style.right = 'auto';
+                    } else {
+                        // 오른쪽 공간이 부족하면 버튼 왼쪽에 표시
+                        modalContent.style.top = `${rect.top}px`;
+                        modalContent.style.left = 'auto';
+                        modalContent.style.right = `${windowWidth - rect.left + 8}px`;
+                    }
+                }
+            }
+
+            // 버튼과 모달 사이의 연결 영역 설정 (PC/태블릿에서만)
+            if (modalBridge) {
+                if (windowWidth > 640) {
+                    modalBridge.style.display = 'block';
+                    modalBridge.style.top = `${rect.top}px`;
+                    modalBridge.style.left = `${rect.right}px`;
+                    modalBridge.style.width = '2px';
+                    modalBridge.style.height = `${rect.height}px`;
+                } else {
+                    // 모바일에서는 연결 영역 숨김
+                    modalBridge.style.display = 'none';
+                }
+            }
+
+            sortModal.classList.remove('hidden');
+            // 모달을 열 때 이전 선택 상태 복원
+            if (selectedSortValue) {
+                setSortSelection(selectedSortValue);
+            }
+            setTimeout(() => {
+                sortModal.classList.remove('opacity-0');
+                if (modalContent) {
+                    modalContent.classList.remove('scale-95');
+                    modalContent.classList.add('scale-100');
+                }
+            }, 10);
+        }
+
+        function closeSortModal() {
+            if (!sortModal) return;
+            sortModal.classList.add('opacity-0');
+            const modalContent = document.getElementById('sort-modal-content');
+            const modalBridge = document.getElementById('sort-modal-bridge');
+            if (modalContent) {
+                modalContent.classList.remove('scale-100');
+                modalContent.classList.add('scale-95');
+                // 동적으로 설정한 스타일 초기화
+                modalContent.style.width = '';
+                modalContent.style.top = '';
+                modalContent.style.left = '';
+                modalContent.style.right = '';
+            }
+            if (modalBridge) {
+                modalBridge.style.display = '';
+            }
+            setTimeout(() => {
+                sortModal.classList.add('hidden');
+            }, 300);
+        }
+
+        // 정렬 버튼에 click 이벤트 추가
+        if (sortBtn && sortModal) {
+            sortBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // 모달이 이미 열려있으면 닫기, 닫혀있으면 열기
+                if (sortModal.classList.contains('hidden')) {
+                    openSortModal();
+                } else {
+                    closeSortModal();
+                }
+            });
+
+            // 모달 외부 클릭 시 닫기
+            document.addEventListener('click', (e) => {
+                if (sortModal && !sortModal.classList.contains('hidden')) {
+                    const modalContent = document.getElementById('sort-modal-content');
+                    const modalBridge = document.getElementById('sort-modal-bridge');
+                    if (modalContent && !modalContent.contains(e.target) &&
+                        (!modalBridge || !modalBridge.contains(e.target)) &&
+                        e.target !== sortBtn && !sortBtn.contains(e.target)) {
+                        closeSortModal();
+                    }
+                }
+            });
+        }
+
+        // 정렬 옵션 선택 버튼 클릭 이벤트
+        if (sortOptionBtns.length > 0) {
+            sortOptionBtns.forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const selectedSort = btn.dataset.sort;
+                    console.log('선택된 정렬:', selectedSort);
+
+                    // 정렬 버튼의 텍스트를 선택한 정렬 방식으로 변경
+                    if (sortBtn) {
+                        // 버튼 크기 고정 유지
+                        sortBtn.style.minWidth = '73px';
+                        sortBtn.style.width = '73px';
+                        sortBtn.style.paddingLeft = '6px';
+                        sortBtn.style.paddingRight = '4px';
+
+                        // 기존 스타일 초기화
+                        sortBtn.style.fontSize = '';
+                        sortBtn.style.lineHeight = '';
+                        sortBtn.style.textAlign = '';
+                        sortBtn.className = 'shrink-0 py-2 h-full text-gray-600 text-sm font-bold transition-all flex items-center gap-1';
+
+                        // 아이콘은 항상 고정, 텍스트만 변경
+                        const icon = '<i class="fa-solid fa-sort" style="flex-shrink: 0;"></i>';
+                        let textContent = '';
+
+                        if (selectedSort === 'reset') {
+                            // 원래대로
+                            textContent = '정렬';
+                            selectedSortValue = null;
+                            clearSortSelection();
+
+                            // 정렬 초기화: 현재 카테고리와 검색어 유지하면서 정렬만 초기화
+                            const currentCategory = currentCategoryFilter || 'all';
+                            const keyword = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
+                            currentPage = 1; // 1페이지로 리셋
+                            console.log(`🔄 정렬 초기화: 카테고리=${currentCategory}, 검색어=${keyword}`);
+                            await renderCards(currentCategory, keyword, false, null);
+                        } else {
+                            // 선택된 정렬 저장
+                            selectedSortValue = selectedSort;
+
+                            // 선택된 버튼에 스타일 적용
+                            setSortSelection(selectedSort);
+
+                            if (selectedSort === 'latest') {
+                                // 최신순: 그대로 표시
+                                textContent = '최신순';
+                            } else if (selectedSort === 'popular') {
+                                // 인기순: 그대로 표시
+                                textContent = '인기순';
+                            } else if (selectedSort === 'deadline') {
+                                // 마감순: 그대로 표시
+                                textContent = '마감순';
+                            }
+                        }
+
+                        // 아이콘과 텍스트를 분리하여 아이콘 위치 고정, 텍스트 영역 크기 고정 (3글자)
+                        sortBtn.innerHTML = `${icon} <span class="sort-text" style="display: inline-block; width: 3ch; text-align: left; flex: 1;">${textContent}</span>`;
+                    }
+
+                    // 정렬 적용: 현재 필터와 검색어 유지하면서 정렬만 변경
+                    const currentCategory = currentCategoryFilter || 'all'; // 저장된 카테고리 필터 사용
+                    const keyword = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
+                    const sortToApply = selectedSort === 'reset' ? null : selectedSort;
+
+                    // 정렬 변경 시 1페이지로 리셋
+                    currentPage = 1;
+
+                    console.log(`🔀 정렬 적용: 카테고리=${currentCategory}, 정렬=${sortToApply}, 검색어=${keyword}`);
+
+                    await renderCards(currentCategory, keyword, false, sortToApply);
+
+                    closeSortModal();
+                });
+            });
+        }
     </script>
-
-    <!-- policy-modal -->
-
-    {% include "components/policy_modal.html" %}
-
-    <script src="/static/policy_modal.js"></script>
 
 </body>
 
