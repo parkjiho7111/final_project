@@ -111,3 +111,18 @@ if (isLoggedIn && userEmail) {
     // ... 로그인 상태일 때 UI 업데이트 로직
 }
 ```
+
+---
+
+## 6. 마이페이지 라우터 오류 수정 (ImportError)
+
+### 오류 현상
+- **메시지**: `ImportError: cannot import name 'categoryColorMap' from 'models'`
+- **원인**: 새로 구현한 `routers/mypage.py` 파일이 `models.py`의 헬퍼 함수 및 상수를 참조(`import`)하도록 작성되었으나, 해당 내용들이 `models.py`에 존재하지 않아 서버 실행이 불가능했습니다. (과거 파일 덮어쓰기 과정에서 소실됨)
+
+### 해결 방법
+- **파일**: `/apps/Being_geul_Final/models.py`
+- **조치**: `models.py` 파일 하단에 공통적으로 사용되는 상수와 헬퍼 함수들을 다시 추가했습니다.
+    - `FRONT_TO_DB_CATEGORY`, `categoryColorMap`
+    - `normalize_region_name`, `get_image_for_category`
+    - 이를 통해 `routers/mypage.py` 뿐만 아니라 향후 다른 모듈에서도 공통적으로 참조할 수 있게 되었습니다.

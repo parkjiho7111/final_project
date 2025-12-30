@@ -65,7 +65,7 @@
 ### [3] 라우터 등록 및 코드 정리 (`main.py` & `models.py`)
 - **작업 내용**: 
     - `main.py`에 `routers/mypage.py` 등록 (`app.include_router(mypage.router)`)
-    - 기존의 임시 마이페이지 핸들러 주석 처리
+    - 기존의 임시 마이페이지 핸들러 주석 처리 (**-> 이후 404 오류 원인이 되어 재복구함**)
     - `models.py`에서 중복 정의된 `provider` 컬럼 코드 정리
 
 ### [4] 프론트엔드 연동 (`script.js`)
@@ -84,3 +84,19 @@
     - 마이페이지 로드 시 더미 데이터 대신 서버 API 호출.
     - `/api/mypage/likes`: 찜한 정책 목록 표시.
     - `/api/mypage/stats`: 차트 데이터 업데이트.
+
+---
+
+## 4. 트러블 슈팅 (오류 수정 기록)
+
+### [오류 1] 마이페이지 404 Not Found
+- **현상**: `/mypage.html` 접속 시 404 에러 페이지가 뜸.
+- **원인**: `main.py`에서 라우터를 통합하는 과정에서, HTML 페이지를 서빙하는 핸들러(`@app.get("/mypage.html")`)를 중복으로 오인하여 주석 처리해버림. `routers/mypage.py`는 API(`prefix="/api/mypage"`)만 담당하고 페이지 서빙 로직이 없었기 때문에 연결 고리가 끊어짐.
+- **조치**: `main.py`의 주석 처리된 코드를 다시 활성화.
+- **수정 코드 (`main.py`)**:
+    ```python
+    # [2] 마이 페이지 (복구: API 라우터와 별개로 HTML 페이지 서빙 필요)
+    @app.get("/mypage.html")
+    async def read_mypage(request: Request):
+        return templates.TemplateResponse("mypage.html", {"request": request})
+    ```

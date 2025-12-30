@@ -40,10 +40,10 @@ app.include_router(mypage.router)     # [NEW] 마이페이지 기능 (찜하기,
 async def read_root(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
-# [2] 마이 페이지 (라우터에서 처리하므로 여기서 삭제 가능하지만, 안전하게 주석 처리)
-# @app.get("/mypage.html")
-# async def read_mypage(request: Request):
-#     return templates.TemplateResponse("mypage.html", {"request": request})
+# [2] 마이 페이지 (복구: API 라우터와 별개로 HTML 페이지 서빙 필요)
+@app.get("/mypage.html")
+async def read_mypage(request: Request):
+    return templates.TemplateResponse("mypage.html", {"request": request})
 
 # [3] 전체 정책 페이지 (아직 라우터 분리 안 됨 -> 여기서 직접 처리)
 @app.get("/all.html")
