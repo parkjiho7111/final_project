@@ -1,40 +1,118 @@
-"""
-전체 정책 보기 페이지 (all.html) 관련 라우터
-"""
-from fastapi import APIRouter, Request, Form, Depends
-from fastapi.responses import HTMLResponse, JSONResponse
+import os
+import random
+from typing import Optional
+from fastapi import APIRouter, Request, Depends
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from typing import Optional
-import os
 
-from database import get_db
-from models import (
-    Policy, 
-    FRONT_TO_DB_CATEGORY, categoryColorMap, 
-    normalize_region_name, get_image_for_category
-)
+from database import SessionLocal
+from models import Policy
 
-router = APIRouter(tags=["all"])
+# 라우터 생성
+router = APIRouter()
 
-# 템플릿 디렉토리 설정
+# 템플릿 경로 설정
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-template_dir = os.path.join(BASE_DIR, "templates")
-templates = Jinja2Templates(directory=template_dir)
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
+# DB 세션 의존성
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# ==================== [유틸리티 및 매핑] ====================
+
+# 카테고리 색상 매핑
+categoryColorMap = {
+    "주거": "#F48245", "주거/자립": "#F48245",
+    "취업": "#4A9EA8", "취업/직무": "#4A9EA8",
+    "금융": "#D9B36C", "금융/생활비": "#D9B36C",
+    "복지": "#9F7AEA", "복지/문화": "#9F7AEA",
+    "창업": "#FF5A5F", "창업/사업": "#FF5A5F",
+    "교육": "#4299E1", "교육/자격증": "#4299E1"
+}
+
+# 프론트엔드 카테고리 -> 데이터베이스 genre 매핑
+FRONT_TO_DB_CATEGORY = {
+    "취업": "취업/직무",
+    "주거": "주거/자립",
+    "금융": "금융/생활비",
+    "창업": "창업/사업",
+    "복지": "복지/문화",
+    "교육": "교육/자격증"
+}
+
+# 프론트엔드 지역 ID (SVG) -> DB 저장용 한글 명칭
+FRONT_TO_DB_REGION = {
+    'national': '전국',
+    'detail_seoul': '서울', 'detail_gyeonggi': '경기', 'detail_incheon': '인천',
+    'gangwon': '강원', 'chungbug': '충북', 'chungnam': '충남', 'detail_chungnam': '충남',
+    'jeonbug': '전북', 'jeonnam': '전남', 'detail_jeonnam': '전남',
+    'gyeongbug': '경북', 'detail_gyeongbug': '경북',
+    'gyeongnam': '경남', 'detail_gyeongnam': '경남',
+    'jeju': '제주',
+    'detail_busan': '부산', 'detail_daegu': '대구', 'detail_daejun': '대전',
+    'detail_gwangju': '광주', 'detail_ulsan': '울산', 'detail_saejong': '세종'
+}
+
+def normalize_region_name(input_str: str) -> str:
+    """
+    JSON 파일 로딩 시 '전라남도' -> '전남' 등으로 변환.
+    프론트에서 오는 ID ('detail_seoul')도 '서울'로 변환.
+    """
+    if not input_str:
+        return "전국"
+    
+    # 1. 프론트 ID인 경우 매핑 테이블 사용
+    if input_str in FRONT_TO_DB_REGION:
+        return FRONT_TO_DB_REGION[input_str]
+        
+    # 2. 한글 긴 이름인 경우 (앞 2글자로 축약)
+    if len(input_str) >= 2:
+        return input_str[:2]
+        
+    return input_str
+
+def get_image_for_category(category: str) -> str:
+    """카테고리에 맞는 랜덤 이미지 URL 반환"""
+    cat_code = "welfare"
+    if "주거" in category:
+        cat_code = "housing"
+    elif "취업" in category or "일자리" in category:
+        cat_code = "job"
+    elif "금융" in category:
+        cat_code = "finance"
+    elif "창업" in category:
+        cat_code = "startup"
+    elif "교육" in category:
+        cat_code = "growth"
+    
+    return f"/static/images/card_images/{cat_code}_{random.randint(1, 5)}.webp"
+
+# ==================== [라우터 엔드포인트] ====================
+
+# 전체 정책 페이지 렌더링
+@router.get("/all.html", response_class=HTMLResponse)
+async def read_all_policies(request: Request):
+    return templates.TemplateResponse("all.html", {"request": request})
+
+# 정책 카드 데이터 조회 API (전체보기 페이지용)
 @router.get("/api/cards")
 async def api_get_cards(
-    region: Optional[str] = None,  # 지역 필터 (전체보기 페이지용)
-    user_id: Optional[str] = None,
-    category: Optional[str] = None,
-    keyword: Optional[str] = None,
-    sort: Optional[str] = None,  # 'latest', 'popular', 'deadline', None
+    region: Optional[str] = None,  # 지역 필터
+    category: Optional[str] = None,  # 카테고리 필터
+    keyword: Optional[str] = None,  # 검색 키워드
+    sort: Optional[str] = None,  # 정렬: 'latest', 'popular', 'deadline'
     db: Session = Depends(get_db)
 ):
     """
-    전체보기 페이지용 정책 카드 데이터 조회
-    category 또는 keyword로 검색, sort로 정렬
+    전체보기(All) 페이지용 API
+    category 또는 keyword로 검색, sort로 정렬, region으로 지역 필터링
     """
     query = db.query(Policy)
     
@@ -53,6 +131,7 @@ async def api_get_cards(
         # 전체 선택 시: 필터링 없음 (모든 지역 포함)
         print(f"🗺️ 지역 필터링: 전체 (필터링 없음)")
     
+    # 카테고리 필터링
     if category and category != 'all':
         # 프론트엔드 카테고리를 DB genre 값으로 매핑
         db_category = FRONT_TO_DB_CATEGORY.get(category, category)
@@ -60,12 +139,14 @@ async def api_get_cards(
         query = query.filter(Policy.genre == db_category)
         print(f"🔍 카테고리 필터링: '{category}' -> '{db_category}'")
     
+    # 키워드 검색
     if keyword:
         search_pattern = f"%{keyword}%"
         query = query.filter(or_(
             Policy.title.like(search_pattern),
             Policy.summary.like(search_pattern)
         ))
+        print(f"🔎 키워드 검색: '{keyword}'")
     
     # 정렬 기능
     if sort == 'latest':
@@ -84,7 +165,7 @@ async def api_get_cards(
         # 기본 정렬: id 오름차순
         query = query.order_by(Policy.id.asc())
         print(f"📋 정렬: 기본 (id ASC)")
-        
+    
     # 전체보기 페이지에서는 모든 데이터를 가져옴
     policies = query.all()
 
@@ -117,5 +198,5 @@ async def api_get_cards(
             "region": p.region or "전국",
             "colorCode": categoryColorMap.get(p.genre or "", "#777777")
         })
-        
+    
     return result
