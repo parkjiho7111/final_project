@@ -29,6 +29,16 @@ class User(Base):
     name = Column(String, nullable=False)
     password = Column(String, nullable=True)
     region = Column(String, nullable=True)
-    provider = Column(String, default="local", nullable=True)
 
-#3. 사용자 테이블    
+
+# 3. 사용자 행동(좋아요/패스) 테이블 (신규)
+from datetime import datetime
+
+class UserAction(Base):
+    __tablename__ = "users_action"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_email = Column(String, nullable=False, index=True) 
+    policy_id = Column(Integer, nullable=False) # Policy 테이블 조인용
+    type = Column(String, nullable=False) # 'like' 또는 'pass' 저장
+    created_at = Column(DateTime, default=datetime.now)

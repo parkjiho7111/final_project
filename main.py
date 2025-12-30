@@ -9,7 +9,7 @@ from database import engine
 
 # [중요 2] 우리가 만든 라우터들 가져오기
 # (팀원들이 routers 폴더에 해당 파일들을 만들어야 에러가 안 납니다!)
-from routers import landing, auth, about, main_page, all 
+from routers import landing, auth, about, main_page, all, mypage 
 
 # [중요 3] 서버 시작 시 DB에 없는 테이블(users 등) 자동 생성
 models.Base.metadata.create_all(bind=engine)
@@ -31,6 +31,7 @@ app.include_router(auth.router)       # 로그인/회원가입 기능
 app.include_router(about.router)      # [NEW] About 페이지 담당자 기능
 app.include_router(main_page.router)  # [NEW] Main 페이지 담당자 기능
 app.include_router(all.router)        # [NEW] 전체 정책 페이지 기능
+app.include_router(mypage.router)     # [NEW] 마이페이지 기능 (찜하기, 통계)
 
 # --- 페이지 접속 경로 설정 ---
 
@@ -39,10 +40,10 @@ app.include_router(all.router)        # [NEW] 전체 정책 페이지 기능
 async def read_root(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
-# [2] 마이 페이지 (아직 라우터 분리 안 됨 -> 여기서 직접 처리)
-@app.get("/mypage.html")
-async def read_mypage(request: Request):
-    return templates.TemplateResponse("mypage.html", {"request": request})
+# [2] 마이 페이지 (라우터에서 처리하므로 여기서 삭제 가능하지만, 안전하게 주석 처리)
+# @app.get("/mypage.html")
+# async def read_mypage(request: Request):
+#     return templates.TemplateResponse("mypage.html", {"request": request})
 
 # [3] 전체 정책 페이지 (아직 라우터 분리 안 됨 -> 여기서 직접 처리)
 @app.get("/all.html")

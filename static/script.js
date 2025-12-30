@@ -171,7 +171,26 @@ class CardSwiper {
         card.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
         card.style.transform = `translateX(${moveX}px) rotate(${rotate}deg)`;
         card.style.opacity = '0';
-        setTimeout(() => { card.remove(); }, 500);
+        setTimeout(() => {
+            card.remove();
+
+            // [NEW] API 호출 (로그인 상태일 때만)
+            const userEmail = localStorage.getItem('userEmail');
+            if (userEmail) {
+                const actionType = direction === 'right' ? 'like' : 'pass';
+                const policyId = card.getAttribute('data-id'); // data-id 속성 필요
+
+                fetch('/api/mypage/action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_email: userEmail,
+                        policy_id: parseInt(policyId),
+                        type: actionType
+                    })
+                }).catch(err => console.error("Action Save Error:", err));
+            }
+        }, 500);
     }
 }
 
@@ -489,6 +508,11 @@ async function checkLoginState() {
         localStorage.clear();
         return;
     }
+
+    // [수정] 변수 선언 및 로컬 스토리지 값 로드 (ReferenceError 해결)
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userEmail = localStorage.getItem('userEmail');
+
     if (isLoggedIn && userEmail) {
         const pcNavList = document.getElementById('pc-nav-list');
         if (pcNavList) {
@@ -657,23 +681,56 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tinderList) new CardSwiper(tinderList, tinderData);
 
     // 마이페이지
+    // 마이페이지 (API 연동 버전)
     const mypageList = document.getElementById('mypage-list');
     if (mypageList) {
-        if (myLikedData.length === 0) {
-            mypageList.innerHTML = `<div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>아직 찜한 정책이 없어요.</p></div>`;
+        const userEmail = localStorage.getItem('userEmail');
+
+        if (!userEmail) {
+            mypageList.innerHTML = `<div class="empty-state"><p>로그인이 필요한 서비스입니다.</p></div>`;
         } else {
-            mypageList.innerHTML = myLikedData.map(item => createCardHTML(item, false)).join('');
-            if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-                gsap.from("#mypage-list .policy-card", { y: 50, opacity: 0, duration: 0.6, stagger: 0.1, scrollTrigger: { trigger: "#mypage-list", start: "top 80%" } });
+            // 1. 찜한 정책 목록 가져오기
+            fetch(`/api/mypage/likes?user_email=${userEmail}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.length === 0) {
+                        mypageList.innerHTML = `<div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>아직 찜한 정책이 없어요.</p></div>`;
+                    } else {
+                        mypageList.innerHTML = data.map(item => createCardHTML(item, false)).join('');
+                        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+                            gsap.from("#mypage-list .policy-card", { y: 50, opacity: 0, duration: 0.6, stagger: 0.1, scrollTrigger: { trigger: "#mypage-list", start: "top 80%" } });
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Link Load Error:", err);
+                    mypageList.innerHTML = `<div class="empty-state"><p>데이터를 불러오는 중 오류가 발생했습니다.</p></div>`;
+                });
+
+            // 2. 차트 데이터 가져오기
+            const ctx = document.getElementById('myChart');
+            if (ctx && typeof Chart !== 'undefined') {
+                fetch(`/api/mypage/stats?user_email=${userEmail}`)
+                    .then(res => res.json())
+                    .then(stats => {
+                        new Chart(ctx, {
+                            type: 'radar',
+                            data: {
+                                labels: stats.labels,
+                                datasets: [{
+                                    label: '나의 관심도',
+                                    data: stats.data,
+                                    backgroundColor: 'rgba(244, 130, 69, 0.2)',
+                                    borderColor: '#F48245',
+                                    pointBackgroundColor: '#F48245',
+                                    borderWidth: 2
+                                }]
+                            },
+                            options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: '#eee' }, grid: { color: '#eee' }, pointLabels: { font: { size: 12, family: 'Pretendard' }, color: '#666' }, ticks: { display: false, maxTicksLimit: 5 } } }, plugins: { legend: { display: false } } }
+                        });
+                    })
+                    .catch(err => console.error("Stats Load Error:", err));
             }
-        }
-        const ctx = document.getElementById('myChart');
-        if (ctx && typeof Chart !== 'undefined') {
-            new Chart(ctx, {
-                type: 'radar',
-                data: { labels: ['금융/자산', '주거', '취업/창업', '복지', '교육', '참여'], datasets: [{ label: '나의 관심도', data: [85, 90, 70, 60, 40, 50], backgroundColor: 'rgba(244, 130, 69, 0.2)', borderColor: '#F48245', pointBackgroundColor: '#F48245', borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: '#eee' }, grid: { color: '#eee' }, pointLabels: { font: { size: 12, family: 'Pretendard' }, color: '#666' }, ticks: { display: false, maxTicksLimit: 5 } } }, plugins: { legend: { display: false } } }
-            });
         }
     }
 });

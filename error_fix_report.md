@@ -1,7 +1,7 @@
 # 오류 수정 보고서 (2025-12-30)
 
 ## 개요
-2025년 12월 30일 발생한 데이터 로드 및 인증 확인 관련 404 Not Found 오류에 대한 분석 및 해결 내역입니다.
+2025년 12월 30일 발생한 데이터 로드, 인증 확인, 서버 실행, 그리고 반복적인 클라이언트 사이드 오류들에 대한 분석 및 해결 내역입니다.
 
 ## 1. 정책 데이터 로드 오류 수정
 
@@ -36,7 +36,7 @@ app.include_router(all.router) # 추가됨
 
 ### 오류 현상
 - **메시지**: `GET http://.../api/auth/verify 404 (Not Found)`
-- **원인**: 프론트엔드(`script.js`)는 페이지 로드 시 로그인 유지를 확인하기 위해 `/api/auth/verify`를 호출하지만, 백엔드(`routers/auth.py`)에 해당 엔드포인트가 구현되어 있지 않았습니다.
+- **원인**: 프론트엔드(`script.js`)는 페이지 로드 시 로그인 유지를 확인하기 위해 `/api/auth/verify`를 호출하지만, 백엔드(`routers/auth.py` )에 해당 엔드포인트가 구현되어 있지 않았습니다.
 
 ### 해결 방법
 - **파일**: `/apps/Being_geul_Final/routers/auth.py`
@@ -50,4 +50,64 @@ app.include_router(all.router) # 추가됨
 def verify_session():
     # 추후 실제 토큰/세션 검증 로직으로 대체 필요
     return {"message": "Session is valid"}
+```
+
+---
+
+## 3. 서버 실행 오류 수정 (ImportError)
+
+### 오류 현상
+- **메시지**: `ImportError: cannot import name 'FRONT_TO_DB_CATEGORY' from 'models'`
+- **원인**: `routers/all.py` 파일 등에서 `models.py`의 상수(`FRONT_TO_DB_CATEGORY`, `categoryColorMap`) 및 함수(`normalize_region_name`, `get_image_for_category`)를 임포트하려 했으나, 해당 내용이 `models.py`에 누락되어 있었습니다.
+
+### 해결 방법
+- **파일**: `/apps/Being_geul_Final/routers/all.py`
+- **조치**: `models.py`를 수정하는 대신, `routers/all.py` 파일 내부에 필요한 상수(`FRONT_TO_DB_CATEGORY` 등)와 함수를 직접 정의하여 의존성 문제를 해결했습니다.
+  - `ImportError`가 발생하던 `from models import ...` 구문을 제거했습니다.
+  - 해당 파일 내에 필요한 매핑 변수와 헬퍼 함수를 자체적으로 구현했습니다.
+
+---
+
+## 4. 회원가입 클라이언트 오류 수정 (TypeError)
+
+### 오류 현상
+- **메시지**: `Uncaught (in promise) TypeError: Cannot read properties of null (reading 'value')` at `handleSignup`
+- **원인**: `script.js`의 `handleSignup` 함수에서 `document.getElementById('signup-name').value`를 호출하여 사용자 이름을 가져오려 했으나, HTML 템플릿(`auth_modal.html`)에 `id="signup-name"`을 가진 입력 태그가 존재하지 않았습니다.
+
+### 해결 방법
+- **파일**: `/apps/Being_geul_Final/templates/components/auth_modal.html`
+- **조치**: 회원가입 폼 섹션에 이름(닉네임)을 입력받을 수 있는 `<input>` 태그를 추가했습니다.
+
+```html
+<!-- auth_modal.html 변경 사항 -->
+<div class="w-full space-y-3 mb-6">
+    <!-- [추가됨] 이름 입력창 -->
+    <input type="text" id="signup-name" placeholder="이름 (닉네임)" class="auth-input">
+    <input type="text" id="signup-id" placeholder="사용할 아이디" class="auth-input">
+    ...
+</div>
+```
+
+---
+
+## 5. 로그인 상태 확인 오류 수정 (ReferenceError)
+
+### 오류 현상
+- **메시지**: `Uncaught (in promise) ReferenceError: userEmail is not defined`
+- **원인**: `script.js`의 `checkLoginState` 함수 내에서 `isLoggedIn`과 `userEmail` 변수가 선언되거나 초기화되지 않은 상태로 조건문(`if (isLoggedIn && userEmail)`)에서 사용되었습니다.
+
+### 해결 방법
+- **파일**: `/apps/Being_geul_Final/static/script.js`
+- **조치**: `localStorage`에서 해당 키의 값을 읽어와 변수에 할당하는 코드를 조건문 이전에 추가했습니다.
+
+```javascript
+// script.js 변경 사항
+
+// [추가됨] 변수 선언 및 값 할당
+const isLoggedIn = localStorage.getItem('isLoggedIn');
+const userEmail = localStorage.getItem('userEmail');
+
+if (isLoggedIn && userEmail) {
+    // ... 로그인 상태일 때 UI 업데이트 로직
+}
 ```
