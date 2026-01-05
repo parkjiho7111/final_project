@@ -235,7 +235,7 @@
             <div class="membership-content">
                 <h2>나에게<br>정말 필요한 정책만<br>차곡차곡 쌓아 봐요!</h2>
                 <div class="membership-btns">
-                    <button class="btn-primary-red js-login-trigger" data-mode="signup">회원가입</button>
+                    <button id="btn-membership-signup" class="btn-primary-red js-login-trigger" data-mode="signup">회원가입</button>
                     <button id="btn-share" class="btn-secondary-white">공유하기</button>
                 </div>
                 <div class="membership-img">
@@ -397,6 +397,124 @@
     {% include "components/policy_modal.html" %}
 
     <script src="/static/policy_modal.js"></script>
+
+    <!-- auth-modal -->
+
+    {% with btn_class="bg-[#FF5A5F] hover:bg-[#e04a4f]" %}
+    {% include "components/auth_modal.html" %}
+    {% endwith %}
+
+    <script>
+        // 회원가입 버튼 상태 업데이트 함수
+        function updateMembershipButton() {
+            const btn = document.getElementById('btn-membership-signup');
+            if (!btn) return;
+
+            const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+            const userEmail = localStorage.getItem('userEmail');
+
+            if (isLoggedIn && userEmail) {
+                // 로그인 상태: Logout 버튼으로 변경
+                btn.textContent = 'Logout';
+                btn.classList.remove('js-login-trigger');
+                btn.removeAttribute('data-mode');
+                
+                // 기존 클릭 이벤트 제거 후 새 이벤트 추가
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    if (window.handleLogout) {
+                        window.handleLogout();
+                    }
+                };
+            } else {
+                // 로그아웃 상태: 회원가입 버튼으로 변경
+                btn.textContent = '회원가입';
+                btn.classList.add('js-login-trigger');
+                btn.setAttribute('data-mode', 'signup');
+                
+                // 클릭 이벤트 제거 (기존 js-login-trigger 핸들러가 작동하도록)
+                btn.onclick = null;
+            }
+        }
+
+        // 페이지 로드 시 버튼 상태 업데이트
+        document.addEventListener("DOMContentLoaded", () => {
+            // 초기 업데이트
+            updateMembershipButton();
+            
+            // checkLoginState() 실행 후 업데이트 (약간의 지연 후)
+            setTimeout(() => {
+                updateMembershipButton();
+            }, 100);
+            
+            // localStorage 변경 감지하여 버튼 업데이트
+            window.addEventListener('storage', () => {
+                updateMembershipButton();
+            });
+            
+            // 주기적으로 확인 (로그인/회원가입 성공 후 업데이트를 위해)
+            setInterval(() => {
+                updateMembershipButton();
+            }, 500);
+        });
+
+        // 로그인/회원가입 성공 후 버튼 업데이트를 위한 전역 함수
+        window.updateMembershipButton = updateMembershipButton;
+    </script>
+
+    <script>
+        // 정책 모달 열릴 때 배경 마키 애니메이션 속도 제어
+        document.addEventListener("DOMContentLoaded", () => {
+            const modal = document.getElementById('policy-modal');
+            const slideRow1 = document.getElementById('slide-row-1');
+            const slideRow2 = document.getElementById('slide-row-2');
+            
+            if (!modal || !slideRow1 || !slideRow2) return;
+
+            // 원래 애니메이션 속도 저장
+            const originalSpeed1 = '40s'; // scroll-left
+            const originalSpeed2 = '45s'; // scroll-right
+            const slowSpeed1 = '80s'; // 2배 느리게
+            const slowSpeed2 = '90s'; // 2배 느리게
+
+            // 마키 애니메이션 속도 변경 함수
+            function setMarqueeSpeed(isSlow) {
+                if (isSlow) {
+                    // 느리게
+                    slideRow1.style.animationDuration = slowSpeed1;
+                    slideRow2.style.animationDuration = slowSpeed2;
+                } else {
+                    // 원래 속도로 복구
+                    slideRow1.style.animationDuration = originalSpeed1;
+                    slideRow2.style.animationDuration = originalSpeed2;
+                }
+            }
+
+            // 모달 상태 확인 함수
+            function checkModalState() {
+                const isOpen = modal.classList.contains('active') && !modal.classList.contains('hidden');
+                setMarqueeSpeed(isOpen);
+            }
+
+            // MutationObserver로 모달 클래스 변경 감지
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        checkModalState();
+                    }
+                });
+            });
+
+            // 모달 요소 관찰 시작
+            observer.observe(modal, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+
+            // 초기 상태 확인
+            checkModalState();
+        });
+    </script>
 
 
 </body>
