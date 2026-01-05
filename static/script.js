@@ -273,6 +273,22 @@ const AuthController = {
     pendingCallback: null,
 
     init: function () {
+        // [NEW] 엔터키 지원
+        const addEnter = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fn.call(this);
+                }
+            });
+        };
+        addEnter('login-id', this.handleLogin);
+        addEnter('login-pw', this.handleLogin);
+        addEnter('signup-name', this.handleSignup);
+        addEnter('signup-id', this.handleSignup);
+        addEnter('signup-pw', this.handleSignup);
+
         document.addEventListener('click', (e) => {
             const target = e.target.closest('[id]');
             if (!target) return;
@@ -330,6 +346,7 @@ const AuthController = {
         }
 
         modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false'); // [FIX] 접근성 경고 해결
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             if (modalContent) {
@@ -353,6 +370,7 @@ const AuthController = {
         }
         setTimeout(() => {
             modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true'); // [FIX] 접근성 경고 해결
             document.querySelectorAll('.auth-input').forEach(input => input.value = '');
         }, 300);
     },
@@ -381,6 +399,9 @@ const AuthController = {
             alert("모든 정보를 입력해주세요.");
             return;
         }
+
+        // [DEBUG] 회원가입 데이터 확인
+        console.log("Signup Payload:", { email, name, region: this.currentRegion });
 
         try {
             const response = await fetch('/api/auth/signup', {

@@ -25,11 +25,19 @@
         #svg-container svg {
             width: 100% !important;
             height: auto !important;
-            max-height: 80vh !important;
+            max-height: 60vh !important;
+            /* 모바일 기본: 헤더 공간 확보를 위해 축소 */
             max-width: 100% !important;
             display: block;
             transform-origin: center center;
             overflow: visible;
+        }
+
+        @media (min-width: 768px) {
+            #svg-container svg {
+                max-height: 70vh !important;
+                /* 데스크탑에서는 조금 더 크게 */
+            }
         }
 
         /* [2] 퍼즐 조각 스타일 */
@@ -37,6 +45,25 @@
             cursor: pointer;
             transform-style: preserve-3d;
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* [NEW] 지도 숨쉬는 효과 (Alive Effect) */
+        @keyframes breathe {
+
+            0%,
+            100% {
+                filter: drop-shadow(0px 4px 0px #4A9EA8) brightness(1);
+                transform: translateZ(0);
+            }
+
+            50% {
+                filter: drop-shadow(0px 6px 2px #4A9EA8) brightness(1.05);
+                transform: translateZ(5px);
+            }
+        }
+
+        .region-alive {
+            animation: breathe 3s ease-in-out infinite;
         }
 
         g.puzzle-piece path,
@@ -124,6 +151,25 @@
             font-weight: 700;
         }
 
+        /* [NEW] CTA 버튼 펄스 효과 */
+        @keyframes subtle-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(74, 158, 168, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(74, 158, 168, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(74, 158, 168, 0);
+            }
+        }
+
+        .animate-subtle-pulse {
+            animation: subtle-pulse 2s infinite;
+        }
+
         /* 모달 스타일 (auth-input 등 공통 스타일은 auth_modal.html CSS와 공유됨) */
         .auth-input {
             width: 100%;
@@ -172,19 +218,19 @@
     </style>
 </head>
 
-<body class="text-gray-900 overflow-hidden h-screen flex flex-col relative font-sans">
+<body class="text-gray-900 overflow-hidden h-screen flex flex-col relative font-sans py-4 md:py-8">
     <div id="transition-overlay"></div>
     <div id="intro-gate"
         class="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-gray-50/90 backdrop-blur-md transition-all duration-700 hidden">
         <div class="text-center space-y-8 opacity-0 translate-y-10" id="intro-content">
             <div class="space-y-2">
-                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight">당신의 <span
+                <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 tracking-tight break-keep">당신의 <span
                         class="text-[#4A9EA8]">지역</span>을<br>탐색해보세요</h1>
                 <p class="text-gray-500 text-lg">내가 사는 곳의 청년 정책을 가장 쉽고 빠르게.</p>
             </div>
             <div class="flex flex-col gap-3 w-full max-w-xs mx-auto">
                 <button id="btn-start"
-                    class="w-full py-4 bg-[#4A9EA8] hover:bg-[#3b858e] text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 transition-all hover:-translate-y-1 text-lg flex items-center justify-center gap-2">
+                    class="w-full py-4 bg-[#4A9EA8] hover:bg-[#3b858e] text-white font-bold rounded-xl shadow-lg shadow-teal-500/30 transition-all hover:-translate-y-1 text-lg flex items-center justify-center gap-2 animate-subtle-pulse">
                     <span>지도에서 지역 찾기</span>
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -216,6 +262,26 @@
         </button>
     </div>
 
+    <!-- [NEW] 로그인 상태 표시 (우측 상단) - 로그아웃 기능 추가 -->
+    <div id="user-status" class="fixed bottom-6 right-6 z-50 hidden pointer-events-auto group">
+        <div
+            class="bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg border border-gray-100 flex items-center gap-2 transition-all hover:pr-3 cursor-default">
+            <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span id="user-name-display" class="font-bold text-gray-700 text-sm"></span>
+
+            <!-- [UX 개선] 텍스트 대신 아이콘으로 로그아웃 버튼 표시 -->
+            <button id="btn-landing-logout"
+                class="ml-2 w-6 h-6 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                title="로그아웃">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
     <div id="info-tooltip">
         <div class="tooltip-line"></div>
         <div class="tooltip-content"><span class="tooltip-badge">Region</span>
@@ -224,11 +290,15 @@
         </div>
     </div>
 
+
+
     <div id="main-content"
         class="relative w-full h-full flex flex-col items-center justify-center opacity-0 hidden p-4">
-        <header class="text-center z-10 flex-none mb-6 md:mb-10 pointer-events-none">
-            <h1 class="text-3xl md:text-4xl font-bold tracking-tighter mb-2" id="header-title">쓱쓱 프로젝트</h1>
-            <p class="text-sm md:text-base text-gray-500" id="header-desc">지도를 클릭하여 지역별 뉴스를 확인하세요</p>
+        <header class="text-center z-10 flex-none mb-6 md:mb-10 pointer-events-none px-4">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-2 break-keep"
+                id="header-title">쓱-쓱 훑어
+                보는<br>청년 정책 소식</h1>
+            <p class="text-gray-500 text-lg leading-relaxed break-keep" id="header-desc">지도를 클릭하여 지역별 뉴스를 확인하세요</p>
         </header>
         <main id="svg-container" class="w-full max-w-5xl flex items-center justify-center flex-1"></main>
     </div>
@@ -265,6 +335,9 @@
             const allElements = svgElement.querySelectorAll('g, path');
             let tooltipTimeline = null;
 
+            // [NEW] 랜덤으로 몇 개의 퍼즐에 '살아있는' 효과 부여
+            const activeElements = [];
+
             allElements.forEach(element => {
                 const rawId = element.id || '';
                 const regionId = rawId.trim();
@@ -275,11 +348,15 @@
 
                 if (activeIds.includes(regionId)) {
                     element.classList.add('puzzle-piece');
+                    activeElements.push(element); // 활동 요소 수집
 
                     // 툴팁 이벤트
                     element.addEventListener('mouseenter', function () {
                         if (this.tagName.toLowerCase() === 'path' || this.tagName.toLowerCase() === 'g') this.parentNode.appendChild(this);
                         const data = currentConfig.db[regionId] || { name: 'Unknown', count: 0 };
+                        // 호버 시 살아있는 효과 잠시 중단 (깔끔한 호버를 위해)
+                        this.style.animation = 'none';
+
                         tTitle.innerText = data.name; tCountSpan.innerText = data.count.toLocaleString();
                         tooltip.style.display = 'flex';
                         const rect = element.getBoundingClientRect();
@@ -299,7 +376,11 @@
                         tooltipTimeline.set(tLine, { width: 0 }).set(tContent, { opacity: 0, y: 10 }).to(tLine, { width: 80, duration: 0.4, ease: "power2.out" }).to(tContent, { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.7)" }, "-=0.2");
                     });
 
-                    element.addEventListener('mouseleave', function () { if (tooltipTimeline) tooltipTimeline.kill(); tooltip.style.display = 'none'; });
+                    element.addEventListener('mouseleave', function () {
+                        // 애니메이션 복구 (클래스 재적용 필요 시)
+                        this.style.animation = '';
+                        if (tooltipTimeline) tooltipTimeline.kill(); tooltip.style.display = 'none';
+                    });
 
                     // 클릭 이벤트
                     element.addEventListener('click', (e) => {
@@ -328,10 +409,20 @@
                 } else { element.classList.add('region-disabled'); }
             });
 
+            // [NEW] 랜덤으로 3개 정도의 지역에 호흡 효과 부여
+            if (activeElements.length > 0) {
+                // 섞기
+                const shuffled = activeElements.sort(() => 0.5 - Math.random());
+                // 상위 3개 혹은 전체의 30%
+                const selected = shuffled.slice(0, Math.max(2, Math.floor(activeElements.length * 0.3)));
+                selected.forEach(el => el.classList.add('region-alive'));
+            }
+
             function performTransition(callback) {
                 gsap.timeline().to("#svg-container", { scale: 5, opacity: 0, duration: 0.8, ease: "power4.in" }).to(overlay, { opacity: 1, duration: 0.5 }, "<0.3").to({}, { onComplete: callback });
             }
         }
+
 
         // [2] DB 매핑 정보 (API 연결용)
         const DB_MAPPING = {
@@ -403,10 +494,43 @@
             const backNav = document.getElementById('back-nav');
             const headerTitle = document.getElementById('header-title');
             const headerDesc = document.getElementById('header-desc');
+            const userStatus = document.getElementById('user-status'); // [NEW]
+            const userNameDisplay = document.getElementById('user-name-display'); // [NEW]
 
-            headerTitle.innerText = `Sseuk-Sseuk : ${currentConfig.title}`;
+            if (currentRegionKey === 'national') {
+                headerTitle.innerHTML = `쓱-쓱 훑어 보는<br>청년 정책 소식`;
+            } else {
+                headerTitle.innerText = `Sseuk-Sseuk : ${currentConfig.title}`;
+            }
             headerDesc.innerText = currentConfig.desc;
             const hasVisited = sessionStorage.getItem('sseuk_intro_visited');
+
+            // [NEW] 로그인 상태 확인 및 표시
+            const savedUserName = localStorage.getItem('userName');
+            if (isLoggedIn && savedUserName) {
+                if (userStatus && userNameDisplay) {
+                    userNameDisplay.innerText = savedUserName;
+                    userStatus.classList.remove('hidden');
+
+                    // [Inline] 로그아웃 로직 연결
+                    const logoutBtn = document.getElementById('btn-landing-logout');
+                    if (logoutBtn) {
+                        logoutBtn.addEventListener('click', (e) => {
+                            e.stopPropagation(); // 버블링 방지
+                            if (confirm('로그아웃 하시겠습니까?')) {
+                                localStorage.removeItem('isLoggedIn');
+                                localStorage.removeItem('userName');
+                                localStorage.removeItem('userEmail');
+                                alert('로그아웃 되었습니다.');
+                                window.location.reload();
+                            }
+                        });
+                    }
+                }
+                // 로그인 상태면 intro gate에서도 로그인 버튼 숨기기 (선택사항)
+                const introLoginBtn = document.getElementById('btn-intro-login');
+                if (introLoginBtn) introLoginBtn.style.display = 'none';
+            }
 
             if (isDetailMode || hasVisited || isLoggedIn) {
                 introGate.classList.add('hidden');

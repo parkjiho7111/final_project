@@ -25,26 +25,37 @@ class UserLogin(BaseModel):
 # 3. [회원가입 API]
 @router.post("/signup")
 def signup(user: UserCreate, db: Session = Depends(get_db)):
-    # 이미 가입된 이메일인지 확인
-    existing_user = db.query(User).filter(User.email == user.email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="이미 가입된 이메일입니다.")
-    
-    # 비밀번호 암호화 (보안 필수!)
-    hashed_password = pwd_context.hash(user.password)
-    
-    # DB 저장
-    new_user = User(
-        email=user.email,
-        password=hashed_password,
-        name=user.name,
-        region=user.region,
-        provider="local"  # 직접 가입이므로 local
-    )
-    db.add(new_user)
-    db.commit()
-    
-    return {"message": "회원가입 성공", "email": new_user.email}
+    import traceback
+    try:
+        # 이미 가입된 이메일인지 확인
+        existing_user = db.query(User).filter(User.email == user.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="이미 가입된 이메일입니다.")
+        
+        # 비밀번호 암호화 (보안 필수!)
+        hashed_password = pwd_context.hash(user.password)
+        
+        # DB 저장
+        new_user = User(
+            email=user.email,
+            password=hashed_password,
+            name=user.name,
+            region=user.region,
+            provider="local"  # 직접 가입이므로 local
+        )
+        db.add(new_user)
+        db.commit()
+        
+        return {"message": "회원가입 성공", "email": new_user.email}
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = traceback.format_exc()
+        # 파일로 에러 로그 남기기
+        with open("server_error.log", "w", encoding="utf-8") as f:
+            f.write(error_msg)
+        print(error_msg) # 콘솔 출력
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 # 4. [로그인 API]
 @router.post("/login")
@@ -93,14 +104,14 @@ from starlette.responses import RedirectResponse
 load_dotenv()
 
 # Google Config
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI")
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_REDIRECT_URI = os.getenv("GOOGLE_REDIRECT_URI", "").strip()
 
 # Naver Config
-NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
-NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
-NAVER_REDIRECT_URI = os.getenv("NAVER_REDIRECT_URI")
+NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "").strip()
+NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "").strip()
+NAVER_REDIRECT_URI = os.getenv("NAVER_REDIRECT_URI", "").strip()
 
 # ============================================================
 # [Google OAuth]
@@ -190,6 +201,7 @@ def naver_login():
         "state": state,
     }
     url = f"https://nid.naver.com/oauth2.0/authorize?{urlencode(params)}"
+    print(f"\n[DEBUG] Generated Naver Login URL: {url}\n") # <--- 디버깅용 로그
     return RedirectResponse(url)
 
 @router.get("/naver/callback")
