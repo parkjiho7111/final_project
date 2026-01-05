@@ -239,6 +239,22 @@ const AuthController = {
 
     // 1. 초기화: 이벤트 위임 (버튼이 늦게 생겨도 무조건 클릭 감지)
     init: function () {
+        // [NEW] 엔터키 지원
+        const addEnter = (id, fn) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    fn.call(this);
+                }
+            });
+        };
+        addEnter('login-id', this.handleLogin);
+        addEnter('login-pw', this.handleLogin);
+        addEnter('signup-name', this.handleSignup);
+        addEnter('signup-id', this.handleSignup);
+        addEnter('signup-pw', this.handleSignup);
+
         document.addEventListener('click', (e) => {
             // [수정] 클릭한 요소가 버튼 안의 아이콘(SVG)일 수도 있으니, 가장 가까운 ID 가진 요소를 찾습니다.
             const target = e.target.closest('[id]');
@@ -308,6 +324,7 @@ const AuthController = {
         }
 
         modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false'); // [FIX] 접근성 경고 해결
         setTimeout(() => {
             modal.classList.remove('opacity-0');
             if (modalContent) {
@@ -332,6 +349,7 @@ const AuthController = {
         }
         setTimeout(() => {
             modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true'); // [FIX] 접근성 경고 해결
             document.querySelectorAll('.auth-input').forEach(input => input.value = '');
         }, 300);
     },
@@ -362,6 +380,9 @@ const AuthController = {
             alert("모든 정보를 입력해주세요.");
             return;
         }
+
+        // [DEBUG] 회원가입 데이터 확인
+        console.log("Signup Payload:", { email, name, region: this.currentRegion });
 
         try {
             // 진짜 서버로 데이터 전송!
