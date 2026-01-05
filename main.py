@@ -63,4 +63,4 @@ async def read_all_policies(request: Request):
 if __name__ == "__main__":
     import uvicorn
     # reload=True는 코드 수정 시 자동 재시작 기능 (개발용)
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
