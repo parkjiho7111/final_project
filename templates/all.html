@@ -1092,21 +1092,7 @@
             const modalWidth = 192; // w-48 = 192px
             const modalHeight = modalContent ? modalContent.offsetHeight : 200;
 
-            // 먼저 모달을 초기 위치(버튼 위치)로 설정하여 깜빡임 방지
             if (modalContent) {
-                modalContent.style.top = `${rect.top}px`;
-                modalContent.style.left = `${rect.left}px`;
-                modalContent.style.right = 'auto';
-                modalContent.style.opacity = '0';
-            }
-
-            // 모달을 보이지 않는 상태로 활성화 (위치 계산을 위해)
-            sortModal.classList.remove('hidden');
-            
-            // requestAnimationFrame을 사용하여 위치 계산 및 설정
-            requestAnimationFrame(() => {
-                if (!modalContent) return;
-
                 // 모바일 (640px 이하): 버튼 아래 중앙 정렬
                 if (windowWidth <= 640) {
                     // 모바일에서는 모달 너비를 화면에 맞게 조정
@@ -1168,36 +1154,34 @@
                         modalContent.style.right = `${windowWidth - rect.left + 8}px`;
                     }
                 }
+            }
 
-                // 버튼과 모달 사이의 연결 영역 설정 (PC/태블릿에서만)
-                if (modalBridge) {
-                    if (windowWidth > 640) {
-                        modalBridge.style.display = 'block';
-                        modalBridge.style.top = `${rect.top}px`;
-                        modalBridge.style.left = `${rect.right}px`;
-                        modalBridge.style.width = '2px';
-                        modalBridge.style.height = `${rect.height}px`;
-                    } else {
-                        // 모바일에서는 연결 영역 숨김
-                        modalBridge.style.display = 'none';
-                    }
+            // 버튼과 모달 사이의 연결 영역 설정 (PC/태블릿에서만)
+            if (modalBridge) {
+                if (windowWidth > 640) {
+                    modalBridge.style.display = 'block';
+                    modalBridge.style.top = `${rect.top}px`;
+                    modalBridge.style.left = `${rect.right}px`;
+                    modalBridge.style.width = '2px';
+                    modalBridge.style.height = `${rect.height}px`;
+                } else {
+                    // 모바일에서는 연결 영역 숨김
+                    modalBridge.style.display = 'none';
                 }
+            }
 
-                // 모달을 열 때 이전 선택 상태 복원
-                if (selectedSortValue) {
-                    setSortSelection(selectedSortValue);
+            sortModal.classList.remove('hidden');
+            // 모달을 열 때 이전 선택 상태 복원
+            if (selectedSortValue) {
+                setSortSelection(selectedSortValue);
+            }
+            setTimeout(() => {
+                sortModal.classList.remove('opacity-0');
+                if (modalContent) {
+                    modalContent.classList.remove('scale-95');
+                    modalContent.classList.add('scale-100');
                 }
-
-                // 초기 opacity 제거하고 애니메이션 적용
-                modalContent.style.opacity = '';
-                setTimeout(() => {
-                    sortModal.classList.remove('opacity-0');
-                    if (modalContent) {
-                        modalContent.classList.remove('scale-95');
-                        modalContent.classList.add('scale-100');
-                    }
-                }, 10);
-            });
+            }, 10);
         }
 
         function closeSortModal() {
@@ -1211,13 +1195,12 @@
             }
             setTimeout(() => {
                 sortModal.classList.add('hidden');
-                // hidden 클래스 추가 후에 위치 스타일 초기화 (깜빡임 방지)
+                // 동적으로 설정한 스타일 초기화 (모달이 완전히 숨겨진 후)
                 if (modalContent) {
                     modalContent.style.width = '';
                     modalContent.style.top = '';
                     modalContent.style.left = '';
                     modalContent.style.right = '';
-                    modalContent.style.opacity = '';
                 }
                 if (modalBridge) {
                     modalBridge.style.display = '';
@@ -1257,12 +1240,6 @@
                 btn.addEventListener('click', async () => {
                     const selectedSort = btn.dataset.sort;
                     console.log('선택된 정렬:', selectedSort);
-
-                    // 모달을 먼저 즉시 숨기기 (깜빡임 방지)
-                    if (sortModal) {
-                        sortModal.classList.add('hidden');
-                        sortModal.classList.add('opacity-0');
-                    }
 
                     // 정렬 버튼의 텍스트를 선택한 정렬 방식으로 변경
                     if (sortBtn) {
@@ -1329,23 +1306,7 @@
 
                     await renderCards(currentCategory, keyword, false, sortToApply);
 
-                    // 모달 위치 스타일 초기화 (다음 프레임에서 수행하여 깜빡임 방지)
-                    requestAnimationFrame(() => {
-                        if (sortModal && sortModal.classList.contains('hidden')) {
-                            const modalContent = document.getElementById('sort-modal-content');
-                            const modalBridge = document.getElementById('sort-modal-bridge');
-                            if (modalContent) {
-                                modalContent.style.width = '';
-                                modalContent.style.top = '';
-                                modalContent.style.left = '';
-                                modalContent.style.right = '';
-                                modalContent.style.opacity = '';
-                            }
-                            if (modalBridge) {
-                                modalBridge.style.display = '';
-                            }
-                        }
-                    });
+                    closeSortModal();
                 });
             });
         }
