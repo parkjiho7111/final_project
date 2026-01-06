@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeModal = () => {
         if (!modal) return;
         modal.classList.remove('active');
-        document.body.style.overflow = ''; // 스크롤 복구
+        // document.body.style.overflow = ''; // 스크롤바 유지했으므로 복구 불필요
         setTimeout(() => {
             modal.classList.add('hidden');
         }, 300);
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // 2. 카드 클릭 시 호출되는 함수 (HTML onclick="openCardModal(this)"와 연결)
-function openCardModal(element) {
+window.openCardModal = function (element) {
     const modal = document.getElementById('policy-modal');
     if (!modal) return;
 
@@ -212,7 +212,7 @@ function openCardModal(element) {
 
         // 2-4. 모달 보여주기
         modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden'; // 배경 스크롤 막기
+        // document.body.style.overflow = 'hidden'; // [수정] 스크롤바 유지 (화면 덜컹거림 방지)
 
         // 애니메이션 효과
         setTimeout(() => {

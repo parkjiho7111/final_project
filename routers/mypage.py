@@ -140,9 +140,9 @@ def get_liked_policies(user_email: str, db: Session = Depends(get_db)):
             result.append({
                 "id": policy.id,
                 "title": policy.title,
-                "desc": policy.summary or "상세 내용을 확인하세요.",
-                "category": policy.genre or "기타",
-                "date": date_str,
+                "summary": policy.summary or "상세 내용을 확인하세요.",
+                "genre": policy.genre or "기타",
+                "period": date_str,
                 "image": img_src,
                 "link": policy.link or "#",
                 "region": policy.region or "전국",

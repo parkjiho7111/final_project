@@ -8,7 +8,7 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
 }
 
 // ============================================================
-// [1] 데이터 & 유틸리티
+// [1] 데이터 & 유틸리티 (전역 함수로 분리 - 페이지별 이동 용이)
 // ============================================================
 
 // [수정 1] 가짜 데이터 생성 함수(generatePolicyData) 삭제함.
@@ -48,6 +48,7 @@ function createCardHTML(item, isTinder = false) {
 
     // 3. 모달에 넘겨줄 데이터 객체 생성 (이미지 경로 포함)
     const modalData = {
+        id: item.id, // [중요] 찜하기 기능 연동을 위해 ID 필수
         title: displayTitle,
         genre: displayGenre,
         desc: displayDesc,
@@ -129,7 +130,6 @@ class CardSwiper {
     }
     init() {
         if (!this.container) return;
-
         // [수정 2] 데이터 없음 처리 추가
         if (!this.data || this.data.length === 0) {
             this.container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-gray-400"><p class="text-xl font-bold">표시할 정책이 없습니다.</p><p class="text-sm mt-2">조건을 변경하거나 나중에 다시 시도해주세요.</p></div>';
@@ -143,16 +143,19 @@ class CardSwiper {
         this.cards = document.querySelectorAll('.tinder-card');
         this.setupEvents();
         if (typeof gsap !== 'undefined') {
+            // [최적화] 모든 카드를 애니메이션하면 렉이 걸리므로, 상위 5개만 움직이게 설정
             gsap.from(".tinder-card:nth-last-child(-n+5)", { y: 100, opacity: 0, duration: 0.8, stagger: 0.1, ease: "back.out(1.7)" });
         }
     }
     setupEvents() {
         this.cards.forEach((card) => { this.addListeners(card); });
 
+        // [NEW] 키보드 이벤트 리스너 추가 (왼쪽/오른쪽 화살표)
         document.addEventListener('keydown', (e) => {
+            // 현재 남아있는 카드 중 가장 위에 있는(DOM상 마지막) 카드 선택
             const currentCards = document.querySelectorAll('.tinder-card');
             if (currentCards.length === 0) return;
-            const topCard = currentCards[currentCards.length - 1];
+            const topCard = currentCards[currentCards.length - 1]; // 맨 위 카드
 
             if (e.key === 'ArrowLeft') {
                 this.swipeCard(topCard, 'left');
@@ -203,10 +206,11 @@ class CardSwiper {
         setTimeout(() => {
             card.remove();
 
+            // [NEW] API 호출 (로그인 상태일 때만)
             const userEmail = localStorage.getItem('userEmail');
             if (userEmail) {
                 const actionType = direction === 'right' ? 'like' : 'pass';
-                const policyId = card.getAttribute('data-id');
+                const policyId = card.getAttribute('data-id'); // data-id 속성 필요
 
                 fetch('/api/mypage/action', {
                     method: 'POST',
@@ -223,55 +227,18 @@ class CardSwiper {
 }
 
 // [수정 3] 정책 상세 모달 열기 (기존 window.openModal 대체 및 기능 강화)
-window.openCardModal = function (element) {
-    const itemDataEncoded = element.getAttribute('data-json');
-    const policyModalEl = document.getElementById('policy-modal');
-    if (!policyModalEl) return;
-
-    try {
-        const item = JSON.parse(itemDataEncoded);
-
-        // HTML 요소 매핑
-        const els = {
-            title: document.getElementById('modal-title'),
-            desc: document.getElementById('modal-desc'),
-            img: document.getElementById('modal-img'),
-            cate: document.getElementById('modal-category'),
-            date: document.getElementById('modal-date'),
-            linkBtn: document.getElementById('btn-modal-link') // HTML에 이 ID를 가진 버튼이 있어야 함
-        };
-
-        if (els.title) els.title.innerText = item.title;
-        if (els.desc) els.desc.innerText = item.desc;
-        if (els.img) els.img.src = item.image;
-        if (els.cate) els.cate.innerText = item.genre;
-        if (els.date) els.date.innerText = item.date;
-
-        // [신규] 원문 보기 링크 연결
-        if (els.linkBtn) {
-            // 기존 이벤트 제거를 위해 cloneNode 사용하거나 단순히 onclick 덮어쓰기
-            els.linkBtn.onclick = function () {
-                if (item.link && item.link.trim() !== "") {
-                    window.open(item.link, '_blank');
-                } else {
-                    alert("원문 링크가 없습니다.");
-                }
-            };
-        }
-
-        policyModalEl.classList.remove('hidden');
-        setTimeout(() => { policyModalEl.classList.add('active'); }, 10);
-    } catch (e) { console.error("Data Parsing Error:", e); }
-};
+// [삭제됨] window.openCardModal은 이제 static/policy_modal.js에서 통합 관리합니다.
 
 // ============================================================
-// [2] Controllers (Auth & Share)
+// [2] Controllers (Auth & Share) - ★ 진짜 서버 통신용 코드 ★
 // ============================================================
 
 const AuthController = {
+    // [상태 관리]
     currentRegion: null,
     pendingCallback: null,
 
+    // 1. 초기화: 이벤트 위임 (버튼이 늦게 생겨도 무조건 클릭 감지)
     init: function () {
         // [NEW] 엔터키 지원
         const addEnter = (id, fn) => {
@@ -290,29 +257,39 @@ const AuthController = {
         addEnter('signup-pw', this.handleSignup);
 
         document.addEventListener('click', (e) => {
+            // [수정] 클릭한 요소가 버튼 안의 아이콘(SVG)일 수도 있으니, 가장 가까운 ID 가진 요소를 찾습니다.
             const target = e.target.closest('[id]');
-            if (!target) return;
+            if (!target) return; // ID 없는 빈 공간 클릭은 무시
 
+            // (1) 가입 완료 버튼
             if (target.id === 'btn-signup-submit') {
                 e.preventDefault();
                 this.handleSignup();
             }
+
+            // (2) 로그인 완료 버튼
             if (target.id === 'btn-login-submit') {
                 e.preventDefault();
                 this.handleLogin();
             }
+
+            // (3) 모달 닫기 버튼들 (이제 아이콘 눌러도 닫힘!)
             if (target.id === 'btn-modal-close-icon') {
                 this.closeModal();
             }
             if (target.id === 'btn-modal-browse') {
                 this.closeModal();
+                // 💡 [핵심] 모달 닫은 뒤, 원래 하려던 동작(페이지 이동) 계속 진행
                 if (this.pendingCallback) {
                     this.pendingCallback();
                 }
             }
+
+            // (4) 뷰 전환 버튼들
             if (['btn-promo-login', 'btn-goto-login'].includes(target.id)) this.switchView('login');
             if (['btn-promo-signup', 'btn-goto-signup'].includes(target.id)) this.switchView('signup');
 
+            // (5) 로그인 트리거 (class로 찾기)
             const trigger = e.target.closest('.js-login-trigger');
             if (trigger) {
                 const mode = trigger.dataset.mode || 'login';
@@ -321,6 +298,7 @@ const AuthController = {
         });
     },
 
+    // 2. 모달 열기
     open: function (mode = 'promo', regionName = null, count = 0, callback = null) {
         const modal = document.getElementById('auth-modal');
         const modalContent = document.getElementById('auth-modal-content');
@@ -329,6 +307,7 @@ const AuthController = {
         this.currentRegion = regionName;
         this.pendingCallback = callback;
 
+        // UI 텍스트 업데이트
         const elements = {
             badgeContainer: document.getElementById('signup-region-badge-container'),
             badgeText: document.getElementById('signup-region-badge'),
@@ -358,6 +337,7 @@ const AuthController = {
         this.switchView(mode);
     },
 
+    // 3. 모달 닫기
     closeModal: function () {
         const modal = document.getElementById('auth-modal');
         const modalContent = document.getElementById('auth-modal-content');
@@ -375,6 +355,7 @@ const AuthController = {
         }, 300);
     },
 
+    // 4. 화면 전환
     switchView: function (viewName) {
         ['promo', 'signup', 'login'].forEach(v => {
             const el = document.getElementById(`auth-view-${v}`);
@@ -390,6 +371,7 @@ const AuthController = {
         }
     },
 
+    // 5. [API] 회원가입 처리 (★ 여기가 진짜 핵심입니다!)
     handleSignup: async function () {
         const email = document.getElementById('signup-id').value;
         const password = document.getElementById('signup-pw').value;
@@ -404,6 +386,7 @@ const AuthController = {
         console.log("Signup Payload:", { email, name, region: this.currentRegion });
 
         try {
+            // 진짜 서버로 데이터 전송!
             const response = await fetch('/api/auth/signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -429,6 +412,7 @@ const AuthController = {
         }
     },
 
+    // 6. [API] 로그인 처리 (★ 여기도 진짜!)
     handleLogin: async function () {
         const email = document.getElementById('login-id').value;
         const password = document.getElementById('login-pw').value;
@@ -471,7 +455,9 @@ const AuthController = {
     }
 };
 
+// ShareController는 님이 올리신 코드 그대로 쓰셔도 됩니다.
 const ShareController = {
+    // ... (기존 코드 유지)
     el: document.getElementById('share-modal'),
     input: document.getElementById('share-url-input'),
     btnClose: document.getElementById('btn-share-close'),
@@ -513,8 +499,10 @@ const ShareController = {
 
 window.openAuthModal = function (mode, regionName, count, callback) { AuthController.open(mode, regionName, count, callback); };
 
+// [NEW] Social Login Trigger (Global)
 window.socialLogin = function (provider) {
     if (!['google', 'naver'].includes(provider)) return;
+    // 백엔드 EndPoint로 이동 -> 리다이렉트 -> 로그인 -> Callback -> 메인으로 복귀
     window.location.href = `/api/auth/${provider}/login`;
 };
 
@@ -523,34 +511,44 @@ window.socialLogin = function (provider) {
 // ============================================================
 
 async function checkLoginState() {
+    // [NEW] 0. OAuth 리다이렉트 복귀 처리 (URL 파라미터 확인)
     const urlParams = new URLSearchParams(window.location.search);
-    const socialLogin = urlParams.get('social_login');
+    const socialLogin = urlParams.get('social_login'); // success
 
     if (socialLogin === 'success') {
         const email = urlParams.get('email');
         const name = urlParams.get('name');
 
         if (email && name) {
+            // 로컬 스토리지 저장 (로그인 처리)
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('userEmail', email);
             localStorage.setItem('userName', name);
+
+            // 깔끔한 URL을 위해 파라미터 제거 (선택 사항)
             window.history.replaceState({}, document.title, window.location.pathname);
+
             alert(`${name}님, 소셜 로그인 성공! 환영합니다.`);
+
+            // [NEW] 메인 페이지로 이동
             window.location.href = '/main.html';
         }
     }
 
+    // 1. 서버에 "나 로그인 맞아?" 물어보기
     try {
         const res = await fetch('/api/auth/verify');
         if (!res.ok) {
+            // 서버가 "너 아닌데?"(401)라고 하면 청소!
             localStorage.clear();
-            return;
+            return; // 함수 종료
         }
     } catch (e) {
         localStorage.clear();
         return;
     }
 
+    // [수정] 변수 선언 및 로컬 스토리지 값 로드 (ReferenceError 해결)
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     const userEmail = localStorage.getItem('userEmail');
 
@@ -593,6 +591,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ShareController.init();
     checkLoginState();
 
+    // 햄버거 메뉴
     const hamburgerBtn = document.getElementById('hamburger-btn');
     const closeBtn = document.getElementById('close-btn');
     const menuOverlay = document.getElementById('mobile-menu-overlay');
@@ -654,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else { if (document.getElementById("preloader")) document.getElementById("preloader").style.display = "none"; window.playHeaderAnimation(); }
         } else { if (document.getElementById("preloader")) document.getElementById("preloader").style.display = "none"; window.playHeaderAnimation(); }
 
-        // Banner Text Cycle
+        // [애플 배너 복구]
         const icons = document.querySelectorAll('.cycling-icon');
         const keywordSpan = document.getElementById('banner-keyword');
         if (icons.length > 0 && keywordSpan && typeof gsap !== 'undefined') {
@@ -698,9 +697,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --------------------------------------------------------
-    // [RENDERERS] Cards & MyPage (DB 데이터 기반)
+    // [RENDERERS] Cards & MyPage
     // --------------------------------------------------------
 
+    // [수정 완료] 메인 슬라이드 2줄 렌더링
     const slideRow1 = document.getElementById('slide-row-1');
     const slideRow2 = document.getElementById('slide-row-2');
 
@@ -726,6 +726,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tinderList = document.getElementById('tinder-list');
     if (tinderList) new CardSwiper(tinderList, tinderData);
 
+    // 마이페이지
     // 마이페이지 (API 연동 버전)
     const mypageList = document.getElementById('mypage-list');
     if (mypageList) {
@@ -734,6 +735,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!userEmail) {
             mypageList.innerHTML = `<div class="empty-state"><p>로그인이 필요한 서비스입니다.</p></div>`;
         } else {
+            // 1. 찜한 정책 목록 가져오기
             fetch(`/api/mypage/likes?user_email=${userEmail}`)
                 .then(res => res.json())
                 .then(data => {

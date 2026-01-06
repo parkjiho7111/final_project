@@ -727,6 +727,7 @@
             if (noResult) noResult.classList.add('hidden');
 
             container.innerHTML = visibleData.map(item => {
+                // [변경] main.html과 동일한 방식 (HTML 엔티티 이스케이프)
                 const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
                 return `
                 <div class="perspective-wrap h-full cursor-pointer group" onclick="openCardModal(this)" data-json="${itemJson}" style="z-index: 1;">
@@ -906,7 +907,9 @@
             }
         });
 
-
+        function openCardModal(element) {
+            console.log("모달 열기:", element.dataset.json);
+        }
 
         // 지역 선택 모달 기능
         const regionBtn = document.getElementById('region-btn');
@@ -1310,9 +1313,7 @@
         }
     </script>
     <!-- policy-modal -->
-
     {% include "components/policy_modal.html" %}
-
     <script src="/static/policy_modal.js"></script>
 </body>
 
