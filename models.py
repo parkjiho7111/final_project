@@ -1,5 +1,5 @@
 # [수정] String, ForeignKey 추가, relationship 추가
-from sqlalchemy import Column, Integer, Text, String, DateTime, Date, ForeignKey
+from sqlalchemy import Column, Integer, Text, String, DateTime, Date, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -19,6 +19,7 @@ class Policy(Base):
     created_at = Column(DateTime)
     end_date = Column(Date)
     view_count = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True) # [NEW] 공개 여부 (True: 모집중, False: 마감)
 
 # 2. 사용자 테이블 (신규)
 class User(Base):

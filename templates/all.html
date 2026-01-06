@@ -528,7 +528,8 @@
                             image: item.image || `/static/images/card_images/${prefix}_${imgIndex}.webp`,
                             link: item.link || "#",
                             colorCode: item.colorCode || "#777777",
-                            img: item.image || `/static/images/card_images/${prefix}_${imgIndex}.webp`
+                            img: item.image || `/static/images/card_images/${prefix}_${imgIndex}.webp`,
+                            is_active: item.is_active // [NEW] API에서 받은 활성화 상태 매핑
                         };
                     } catch (itemError) {
                         console.error('아이템 매핑 오류:', itemError, item);
@@ -729,13 +730,30 @@
             container.innerHTML = visibleData.map(item => {
                 // [변경] main.html과 동일한 방식 (HTML 엔티티 이스케이프)
                 const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
+
+                // [NEW] 마감(Inactive) 상태에 따른 UI 처리
+                // is_active가 명시적으로 false인 경우에만 마감 처리 (undefined/null은 모집중으로 간주)
+                const isClosed = item.is_active === false;
+
+                // 마감 배지 (이미지 위에 오버레이)
+                const badgeHtml = isClosed ? `
+                    <div class="absolute inset-0 bg-black/60 flex items-center justify-center z-10 backdrop-blur-[1px]">
+                         <span class="text-white font-bold text-lg border border-white/80 px-4 py-1.5 rounded-full tracking-wider">모집 마감</span>
+                    </div>` : '';
+
+                // 마감 시 이미지 흑백 처리 및 투명도 조절
+                const imageClass = isClosed ? 'grayscale opacity-80' : '';
+                // 마감 시 카드 전체 투명도 살짝 조절 (선택사항)
+                const cardOpacity = isClosed ? 'opacity-90' : '';
+
                 return `
-                <div class="perspective-wrap h-full cursor-pointer group" onclick="openCardModal(this)" data-json="${itemJson}" style="z-index: 1;">
+                <div class="perspective-wrap h-full cursor-pointer group ${cardOpacity}" onclick="openCardModal(this)" data-json="${itemJson}" style="z-index: 1;">
                     <div class="card-lifter">
                         <div class="policy-card relative bg-white rounded-xl overflow-hidden h-full flex flex-col border border-gray-100 shadow-sm transition-colors"
                              data-color="${item.colorCode}">
                             <div class="card-image w-full bg-white flex items-end justify-center shrink-0 h-[200px] overflow-hidden relative">
-                                <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover" onerror="this.src='/static/images/card_images/default.png'">
+                                ${badgeHtml}
+                                <img src="${item.img}" alt="${item.title}" class="w-full h-full object-cover ${imageClass}" onerror="this.src='/static/images/card_images/default.png'">
                             </div>
                             <div class="card-content text-left bg-white flex-grow flex flex-col justify-between p-5 z-20 relative">
                                 <div>
@@ -746,7 +764,7 @@
                                     <p class="card-desc line-clamp-2 text-sm text-[#666] font-medium leading-relaxed">${item.desc || '상세 내용을 확인하세요.'}</p>
                                 </div>
                                 <div class="card-date flex justify-between items-center mt-4 text-xs text-[#888] border-t pt-3 border-gray-100">
-                                    <span>${item.date || '상시 모집'}</span>
+                                    <span class="${isClosed ? 'text-red-500 font-bold' : ''}">${item.date || '상시 모집'}</span>
                                     <i class="fa-solid fa-arrow-right text-gray-300 group-hover:text-primary-teal transition-transform group-hover:translate-x-1"></i>
                                 </div>
                             </div>
