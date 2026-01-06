@@ -727,9 +727,10 @@
             if (noResult) noResult.classList.add('hidden');
 
             container.innerHTML = visibleData.map(item => {
-                const itemJson = encodeURIComponent(JSON.stringify(item));
+                // [변경] main.html과 동일한 방식 (HTML 엔티티 이스케이프)
+                const itemJson = JSON.stringify(item).replace(/"/g, '&quot;');
                 return `
-                <div class="perspective-wrap h-full cursor-pointer group" onclick="window.open('${item.link || '#'}', '_blank')" data-json="${itemJson}" style="z-index: 1;">
+                <div class="perspective-wrap h-full cursor-pointer group" onclick="openCardModal(this)" data-json="${itemJson}" style="z-index: 1;">
                     <div class="card-lifter">
                         <div class="policy-card relative bg-white rounded-xl overflow-hidden h-full flex flex-col border border-gray-100 shadow-sm transition-colors"
                              data-color="${item.colorCode}">
@@ -1192,17 +1193,19 @@
             if (modalContent) {
                 modalContent.classList.remove('scale-100');
                 modalContent.classList.add('scale-95');
-                // 동적으로 설정한 스타일 초기화
-                modalContent.style.width = '';
-                modalContent.style.top = '';
-                modalContent.style.left = '';
-                modalContent.style.right = '';
-            }
-            if (modalBridge) {
-                modalBridge.style.display = '';
             }
             setTimeout(() => {
                 sortModal.classList.add('hidden');
+                // 동적으로 설정한 스타일 초기화 (모달이 완전히 숨겨진 후)
+                if (modalContent) {
+                    modalContent.style.width = '';
+                    modalContent.style.top = '';
+                    modalContent.style.left = '';
+                    modalContent.style.right = '';
+                }
+                if (modalBridge) {
+                    modalBridge.style.display = '';
+                }
             }, 300);
         }
 
@@ -1309,6 +1312,9 @@
             });
         }
     </script>
+    <!-- policy-modal -->
+    {% include "components/policy_modal.html" %}
+    <script src="/static/policy_modal.js"></script>
 </body>
 
 </html>

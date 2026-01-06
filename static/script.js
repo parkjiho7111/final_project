@@ -11,49 +11,57 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
 // [1] 데이터 & 유틸리티 (전역 함수로 분리 - 페이지별 이동 용이)
 // ============================================================
 
-const categories = ["취업/직무", "창업/사업", "주거/자립", "금융/생활비", "교육/자격증", "복지/문화"];
+// [수정 1] 가짜 데이터 생성 함수(generatePolicyData) 삭제함.
+// HTML에서 window 객체에 넣어준 DB 데이터만 사용. 없으면 빈 배열([]).
+const tinderData = window.tinderData || [];
+const allSlideData = window.allSlideData || [];
 
-// 데이터 생성 함수
-function generatePolicyData(count) {
-    const categoryMap = { "취업/직무": "job", "창업/사업": "startup", "주거/자립": "housing", "금융/생활비": "finance", "교육/자격증": "growth", "복지/문화": "welfare" };
-    const categoryCounters = {};
+// [신규] DB 장르(genre)에 따라 이미지를 자동으로 매칭해주는 함수
+function getCategoryImage(genre) {
+    const map = {
+        "취업/직무": "job",
+        "창업/사업": "startup",
+        "주거/자립": "housing",
+        "금융/생활비": "finance",
+        "교육/자격증": "growth",
+        "복지/문화": "welfare"
+    };
+    // 매칭되는 영문명이 없으면 기본값 'welfare' 사용
+    const prefix = map[genre] || "welfare";
 
-    const data = [];
-    for (let i = 1; i <= count; i++) {
-        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-
-        if (categoryCounters[randomCategory] === undefined) categoryCounters[randomCategory] = 0;
-        const imgNum = categoryCounters[randomCategory];
-        const imgIndex = (imgNum % 5) + 1;
-        categoryCounters[randomCategory]++;
-
-        const prefix = categoryMap[randomCategory] || "welfare";
-        const localImage = `/static/images/card_images/${prefix}_${imgIndex}.webp`;
-
-        data.push({
-            id: i,
-            category: randomCategory,
-            title: `[${randomCategory}] 청년 정책 제목 ${i}`,
-            desc: "이 정책은 서울시 청년들을 위한 맞춤형 지원 사업입니다. 혜택을 놓치지 마세요.",
-            date: `2025.12.${String(Math.floor(Math.random() * 30) + 1).padStart(2, '0')} 마감`,
-            image: localImage
-        });
-    }
-    return data;
+    // 이미지 번호 랜덤 (1~5번) 또는 고정 가능. 현재는 랜덤.
+    const imgIndex = Math.floor(Math.random() * 5) + 1;
+    return `/static/images/card_images/${prefix}_${imgIndex}.webp`;
 }
 
-// 데이터 초기화 (서버에서 주입된 window 데이터 우선 사용)
-const tinderData = window.tinderData || generatePolicyData(10);
-const allSlideData = window.allSlideData || generatePolicyData(30);
-const myLikedData = generatePolicyData(5);
-
-// 카드 HTML 생성 함수 (수정됨)
+// 카드 HTML 생성 함수 (수정됨: DB 컬럼 반영)
 function createCardHTML(item, isTinder = false) {
-    // [중요] JSON 객체를 HTML 속성에 넣기 위해 따옴표(")를 &quot;로 변환해야 깨지지 않습니다.
-    const jsonString = JSON.stringify(item).replace(/"/g, '&quot;');
+    // 1. DB 데이터 매핑 (undefined 방지 처리)
+    const displayGenre = item.genre || "기타";       // DB 컬럼: genre
+    const displayTitle = item.title || "제목 없음";  // DB 컬럼: title
+    const displayDesc = item.summary || "";         // DB 컬럼: summary
+    const displayDate = item.period || "상시";      // DB 컬럼: period
+    const displayLink = item.link || "";            // DB 컬럼: link (원문 연결용)
+
+    // 2. 장르 기반 이미지 자동 생성
+    const displayImage = getCategoryImage(displayGenre);
+
+    // 3. 모달에 넘겨줄 데이터 객체 생성 (이미지 경로 포함)
+    const modalData = {
+        id: item.id, // [중요] 찜하기 기능 연동을 위해 ID 필수
+        title: displayTitle,
+        genre: displayGenre,
+        desc: displayDesc,
+        date: displayDate,
+        image: displayImage,
+        link: displayLink
+    };
+
+    // [중요] JSON 변환 (따옴표 깨짐 방지)
+    const jsonString = JSON.stringify(modalData).replace(/"/g, '&quot;');
 
     if (isTinder) {
-        // [Tinder Card]
+        // [Tinder Card Design]
         const swipeIcons = `
             <div class="swipe-feedback pass absolute top-10 right-10 z-30 opacity-0 transition-none pointer-events-none transform rotate-[15deg]">
                 <div class="border-4 border-gray-500 rounded-xl px-4 py-2 bg-white/90 backdrop-blur-sm shadow-xl">
@@ -70,17 +78,17 @@ function createCardHTML(item, isTinder = false) {
             <div class="policy-card tinder-card absolute top-0 left-0 w-full h-full flex flex-col bg-white overflow-hidden shadow-xl rounded-[30px] cursor-grab" data-id="${item.id}">
                 ${swipeIcons}
                 <div class="card-image w-full h-[320px] bg-gray-50 relative shrink-0">
-                    <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover pointer-events-none">
+                    <img src="${displayImage}" alt="${displayTitle}" class="w-full h-full object-cover pointer-events-none">
                     <div class="absolute bottom-0 w-full h-20 bg-gradient-to-t from-white to-transparent"></div>
                 </div>
                 <div class="card-content flex flex-col justify-between flex-grow p-8 text-left bg-white relative z-10">
                     <div>
-                        <span class="inline-block py-1 px-3 rounded-full bg-orange-50 text-primary-orange text-sm font-bold mb-3 border border-orange-100">${item.category}</span>
-                        <h3 class="card-title text-2xl font-extrabold text-gray-900 leading-tight mb-3 line-clamp-2">${item.title}</h3>
-                        <p class="card-desc text-base text-gray-500 font-medium line-clamp-3 leading-relaxed">${item.desc}</p>
+                        <span class="inline-block py-1 px-3 rounded-full bg-orange-50 text-primary-orange text-sm font-bold mb-3 border border-orange-100">${displayGenre}</span>
+                        <h3 class="card-title text-2xl font-extrabold text-gray-900 leading-tight mb-3 line-clamp-2">${displayTitle}</h3>
+                        <p class="card-desc text-base text-gray-500 font-medium line-clamp-3 leading-relaxed">${displayDesc}</p>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                        <span class="card-date text-sm text-gray-400 font-bold"><i class="fa-regular fa-clock mr-1"></i> ${item.date}</span>
+                        <span class="card-date text-sm text-gray-400 font-bold"><i class="fa-regular fa-clock mr-1"></i> ${displayDate}</span>
                         
                         <button class="relative z-50 text-sm font-bold text-gray-900 underline decoration-gray-300 underline-offset-4 p-2 hover:text-primary-orange transition-colors" 
                                 data-json="${jsonString}"
@@ -91,22 +99,23 @@ function createCardHTML(item, isTinder = false) {
                 </div>
             </div>`;
     } else {
-        // [Slide Card]
+        // [Slide Card Design]
         return `
             <div class="policy-card relative flex flex-col overflow-hidden rounded-[20px] bg-[#F6F6F7] shadow-sm cursor-pointer hover:shadow-xl transition-all group hover:-translate-y-2 hover:bg-white" 
                  data-json="${jsonString}"
+                 data-id="${item.id}"
                  onclick="openCardModal(this)">
                 
                 <div class="card-image w-full h-[180px] flex items-end justify-center overflow-hidden bg-white">
-                    <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                    <img src="${displayImage}" alt="${displayTitle}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                 </div>
                 <div class="card-content p-6 flex flex-col gap-2">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-primary-orange bg-orange-50 px-2 py-1 rounded-md">${item.category}</span>
+                        <span class="text-xs font-bold text-primary-orange bg-orange-50 px-2 py-1 rounded-md">${displayGenre}</span>
                     </div>
-                    <h3 class="card-title text-xl font-extrabold text-[#222] line-clamp-2">${item.title}</h3>
-                    <p class="card-desc text-sm text-[#666] font-medium line-clamp-2">${item.desc}</p>
-                    <span class="card-date text-xs text-[#888] mt-2">${item.date}</span>
+                    <h3 class="card-title text-xl font-extrabold text-[#222] line-clamp-2">${displayTitle}</h3>
+                    <p class="card-desc text-sm text-[#666] font-medium line-clamp-2">${displayDesc}</p>
+                    <span class="card-date text-xs text-[#888] mt-2">${displayDate}</span>
                 </div>
             </div>`;
     }
@@ -121,6 +130,12 @@ class CardSwiper {
     }
     init() {
         if (!this.container) return;
+        // [수정 2] 데이터 없음 처리 추가
+        if (!this.data || this.data.length === 0) {
+            this.container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-gray-400"><p class="text-xl font-bold">표시할 정책이 없습니다.</p><p class="text-sm mt-2">조건을 변경하거나 나중에 다시 시도해주세요.</p></div>';
+            return;
+        }
+
         this.container.innerHTML = '<div class="no-more-cards">모든 카드를 확인했습니다! 🎉</div>';
         [...this.data].reverse().forEach(item => {
             this.container.insertAdjacentHTML('beforeend', createCardHTML(item, true));
@@ -211,22 +226,8 @@ class CardSwiper {
     }
 }
 
-// 정책 상세 모달 열기 (전역 함수)
-window.openModal = function (itemDataEncoded) {
-    const policyModalEl = document.getElementById('policy-modal');
-    if (!policyModalEl) return;
-    try {
-        const item = JSON.parse(decodeURIComponent(itemDataEncoded));
-        const els = { title: document.getElementById('modal-title'), desc: document.getElementById('modal-desc'), img: document.getElementById('modal-img'), cate: document.getElementById('modal-category'), date: document.getElementById('modal-date') };
-        if (els.title) els.title.innerText = item.title;
-        if (els.desc) els.desc.innerText = item.desc;
-        if (els.img) els.img.src = item.image;
-        if (els.cate) els.cate.innerText = item.category;
-        if (els.date) els.date.innerText = item.date;
-        policyModalEl.classList.remove('hidden');
-        setTimeout(() => { policyModalEl.classList.add('active'); }, 10);
-    } catch (e) { console.error("Data Error:", e); }
-};
+// [수정 3] 정책 상세 모달 열기 (기존 window.openModal 대체 및 기능 강화)
+// [삭제됨] window.openCardModal은 이제 static/policy_modal.js에서 통합 관리합니다.
 
 // ============================================================
 // [2] Controllers (Auth & Share) - ★ 진짜 서버 통신용 코드 ★
@@ -703,15 +704,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const slideRow1 = document.getElementById('slide-row-1');
     const slideRow2 = document.getElementById('slide-row-2');
 
-    // 데이터 복제 (무한 스크롤용)
-    const infiniteData = [...allSlideData, ...allSlideData];
+    // [수정 4] 데이터 없음 처리 및 렌더링
+    if (allSlideData.length > 0) {
+        // 무한 스크롤 느낌을 위해 데이터 복제
+        const infiniteData = [...allSlideData, ...allSlideData];
 
-    if (slideRow1) {
-        slideRow1.innerHTML = infiniteData.map(item => createCardHTML(item, false)).join('');
-    }
-    // 기존에 누락되었던 2번째 줄 체크 로직을 독립적으로 추가
-    if (slideRow2) {
-        slideRow2.innerHTML = infiniteData.map(item => createCardHTML(item, false)).join('');
+        if (slideRow1) {
+            slideRow1.innerHTML = infiniteData.map(item => createCardHTML(item, false)).join('');
+        }
+        if (slideRow2) {
+            slideRow2.innerHTML = infiniteData.map(item => createCardHTML(item, false)).join('');
+        }
+    } else {
+        // 데이터가 없을 때 표시할 UI
+        const emptyMsg = '<div class="w-full text-center py-10 text-gray-500">등록된 정책이 없습니다.</div>';
+        if (slideRow1) slideRow1.innerHTML = emptyMsg;
+        if (slideRow2) slideRow2.innerHTML = '';
     }
 
     // 틴더 카드
@@ -746,29 +754,47 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
             // 2. 차트 데이터 가져오기
-            const ctx = document.getElementById('myChart');
-            if (ctx && typeof Chart !== 'undefined') {
-                fetch(`/api/mypage/stats?user_email=${userEmail}`)
+
+            // 차트 업데이트 함수 (전역 등록)
+            window.updateMyPageChart = function () {
+                const ctx = document.getElementById('myChart');
+                const currentUserEmail = localStorage.getItem('userEmail');
+                if (!ctx || typeof Chart === 'undefined' || !currentUserEmail) return;
+
+                fetch(`/api/mypage/stats?user_email=${currentUserEmail}`)
                     .then(res => res.json())
                     .then(stats => {
-                        new Chart(ctx, {
-                            type: 'radar',
-                            data: {
-                                labels: stats.labels,
-                                datasets: [{
-                                    label: '나의 관심도',
-                                    data: stats.data,
-                                    backgroundColor: 'rgba(244, 130, 69, 0.2)',
-                                    borderColor: '#F48245',
-                                    pointBackgroundColor: '#F48245',
-                                    borderWidth: 2
-                                }]
-                            },
-                            options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: '#eee' }, grid: { color: '#eee' }, pointLabels: { font: { size: 12, family: 'Pretendard' }, color: '#666' }, ticks: { display: false, maxTicksLimit: 5 } } }, plugins: { legend: { display: false } } }
-                        });
+                        const existingChart = Chart.getChart(ctx); // 기존 차트 인스턴스 확인
+
+                        if (existingChart) {
+                            // 기존 차트가 있으면 데이터만 업데이트
+                            existingChart.data.labels = stats.labels;
+                            existingChart.data.datasets[0].data = stats.data;
+                            existingChart.update();
+                        } else {
+                            // 차트가 없으면 새로 생성
+                            new Chart(ctx, {
+                                type: 'radar',
+                                data: {
+                                    labels: stats.labels,
+                                    datasets: [{
+                                        label: '나의 관심도',
+                                        data: stats.data,
+                                        backgroundColor: 'rgba(244, 130, 69, 0.2)',
+                                        borderColor: '#F48245',
+                                        pointBackgroundColor: '#F48245',
+                                        borderWidth: 2
+                                    }]
+                                },
+                                options: { responsive: true, maintainAspectRatio: false, scales: { r: { angleLines: { color: '#eee' }, grid: { color: '#eee' }, pointLabels: { font: { size: 12, family: 'Pretendard' }, color: '#666' }, ticks: { display: false, maxTicksLimit: 5 } } }, plugins: { legend: { display: false } } }
+                            });
+                        }
                     })
-                    .catch(err => console.error("Stats Load Error:", err));
-            }
+                    .catch(err => console.error("Stats Update Error:", err));
+            };
+
+            // 최초 실행
+            window.updateMyPageChart();
         }
     }
 });
