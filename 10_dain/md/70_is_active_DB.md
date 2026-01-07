@@ -198,3 +198,23 @@ print(f"모집 중: {active_count}개, 마감됨: {inactive_count}개")
 *   **3단계 (병합 직후)**: '크롤링 기반 마감 상태 동기화' 스크립트 실행 여부 최종 결정.
     *   이때 데이터 상태를 보고 크롤링을 수행할지 결정.
 *   **4단계 (후속 논의)**: 데이터 정제가 완료된 후, `main.html` 및 `mypage.html` 등 다른 페이지에도 '마감 배지(Step 4)' UI를 확대 적용할지 논의 및 결정.
+
+### 6.1 (2026-01-07 추가) '마감 정책' 탭 구현
+사용자 요청에 따라 마감된 정책만 별도로 모아볼 수 있는 기능을 추가하였습니다.
+
+#### 1. UI 변경 (`all.html`)
+정렬 모달창에 **'마감 정책'** 버튼을 추가했습니다 (`data-sort="closed"`).
+이 버튼을 클릭하면 `is_active` 상태가 `False`인(마감된) 정책들만 필터링되어 표시됩니다.
+
+#### 2. 백엔드 로직 추가 (`routers/all.py`)
+`api_get_cards` 함수에 `closed` 정렬 옵션을 추가했습니다.
+```python
+elif sort == 'closed':
+    # 마감 정책 탭: 마감된 정책(is_active=False)만 모아보기
+    # 최신 마감일 순(최근에 끝난 것부터)으로 정렬
+    query = query.filter(Policy.is_active == False).order_by(Policy.end_date.desc().nulls_last())
+```
+
+#### 3. 추가 테스트 가이드
+*   **API 확인**: `http://localhost:8000/api/cards?sort=closed` 로 접속 시 모든 아이템의 `is_active`가 `false`여야 합니다.
+*   **UI 확인**: 정렬 메뉴에서 '마감 정책' 선택 시, 화면에 보이는 모든 카드가 흑백 처리 및 '모집 마감' 배지가 붙어 있어야 합니다.

@@ -33,6 +33,17 @@ window.openCardModal = function (element) {
     const modal = document.getElementById('policy-modal');
     if (!modal) return;
 
+    // [수정] 전역 변수 충돌 방지를 위해 함수 내부로 이동
+    const GENRE_COLORS = {
+        "취업": { main: "#4A9EA8", bg: "#F0FDFA" }, "취업/직무": { main: "#4A9EA8", bg: "#F0FDFA" },
+        "주거": { main: "#F48245", bg: "#FFF7ED" }, "주거/자립": { main: "#F48245", bg: "#FFF7ED" },
+        "금융": { main: "#D9B36C", bg: "#FEFCE8" }, "금융/생활비": { main: "#D9B36C", bg: "#FEFCE8" },
+        "창업": { main: "#FF5A5F", bg: "#FEF2F2" }, "창업/사업": { main: "#FF5A5F", bg: "#FEF2F2" },
+        "복지": { main: "#A855F7", bg: "#FAF5FF" }, "복지/문화": { main: "#A855F7", bg: "#FAF5FF" },
+        "교육": { main: "#3B82F6", bg: "#EFF6FF" }, "교육/자격증": { main: "#3B82F6", bg: "#EFF6FF" },
+        "default": { main: "#777777", bg: "#F3F4F6" }
+    };
+
     // 2-1. 데이터 가져오기 (HTML 태그의 data-json 속성 파싱)
     const jsonStr = element.getAttribute('data-json');
     if (!jsonStr) return console.error("데이터가 없습니다.");
@@ -44,6 +55,7 @@ window.openCardModal = function (element) {
         const els = {
             img: document.getElementById('modal-img'),
             category: document.getElementById('modal-category'),
+            region: document.getElementById('modal-region'), // [NEW] 지역 뱃지
             title: document.getElementById('modal-title'),
             desc: document.getElementById('modal-desc'),
             date: document.getElementById('modal-date'),
@@ -57,12 +69,30 @@ window.openCardModal = function (element) {
         // [이미지]
         if (els.img) {
             // data.image가 없으면 DB의 img, 그것도 없으면 기본 이미지
-            els.img.src = data.image || data.img || '/static/images/card_images/job_1.webp';
+            els.img.src = data.image || data.img || '/static/images/card_images/default.png';
         }
 
-        // [카테고리] DB 칼럼: genre (없으면 category)
+        // [카테고리 & 색상 적용]
+        const genre = data.genre || data.category || '기타';
+        const colors = GENRE_COLORS[genre.split('/')[0]] || GENRE_COLORS[genre] || GENRE_COLORS['default']; // '/' 앞부분으로 매칭 시도
+
         if (els.category) {
-            els.category.innerText = data.genre || data.category || '기타';
+            els.category.innerText = genre;
+            // [NEW] 카테고리 뱃지 색상 적용
+            els.category.style.backgroundColor = colors.bg;
+            els.category.style.color = colors.main;
+            // 테두리 제거 (기존 디자인 유지)
+            els.category.style.border = 'none';
+        }
+
+        // [지역] DB 칼럼: region (값이 없으면 숨김 처리)
+        if (els.region) {
+            if (data.region) {
+                els.region.innerText = data.region;
+                els.region.style.display = ''; // 보이기
+            } else {
+                els.region.style.display = 'none'; // 숨기기
+            }
         }
 
         // [제목] DB 칼럼: title
@@ -83,6 +113,9 @@ window.openCardModal = function (element) {
 
         // [핵심 1] 원문 보러 가기 (DB 칼럼: link)
         if (els.linkBtn) {
+            // [롤백] 버튼 배경색 변경 로직 제거 (기본 회색 유지)
+            // els.linkBtn.style.backgroundColor = colors.main; 
+
             if (data.link) {
                 els.linkBtn.href = data.link; // href 속성에 URL 주입
                 els.linkBtn.classList.remove('opacity-50', 'pointer-events-none'); // 활성화
@@ -99,11 +132,43 @@ window.openCardModal = function (element) {
             // 기존 이벤트 리스너 중복 방지를 위해 onclick 속성으로 재할당
             els.shareBtn.onclick = () => {
                 const shareUrl = data.link || window.location.href; // 링크가 있으면 그 링크, 없으면 현재 페이지 주소
-                navigator.clipboard.writeText(shareUrl).then(() => {
-                    alert('정책 링크가 복사되었습니다!');
-                }).catch(err => {
-                    console.error('복사 실패:', err);
-                });
+
+                // [수정] 복사 로직 개선 (보안 컨텍스트/Fallback 지원)
+                const copyToClipboard = (text) => {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        return navigator.clipboard.writeText(text);
+                    } else {
+                        // Fallback: textarea를 생성하여 select 후 execCommand 사용
+                        const textArea = document.createElement("textarea");
+                        textArea.value = text;
+                        textArea.style.position = "fixed";
+                        textArea.style.left = "-9999px";
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        return new Promise((resolve, reject) => {
+                            try {
+                                const successful = document.execCommand('copy');
+                                if (successful) resolve();
+                                else reject(new Error('Copy command failed'));
+                            } catch (err) {
+                                reject(err);
+                            } finally {
+                                document.body.removeChild(textArea);
+                            }
+                        });
+                    }
+                };
+
+                copyToClipboard(shareUrl)
+                    .then(() => {
+                        alert('정책 링크가 복사되었습니다!');
+                    })
+                    .catch(err => {
+                        console.error('복사 실패:', err);
+                        // 최후의 수단: 사용자에게 링크 보여주기
+                        prompt('클립보드 접근이 제한되어 있습니다. 아래 링크를 직접 복사해주세요.', shareUrl);
+                    });
             };
         }
 

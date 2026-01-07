@@ -161,6 +161,11 @@ async def api_get_cards(
         # 마감순: 모집중 우선 -> 마감 임박순 (end_date 오름차순)
         query = query.order_by(Policy.is_active.desc(), Policy.end_date.asc().nulls_last())
         print(f"⏰ 정렬: 마감순 (Active First -> end_date ASC)")
+    elif sort == 'closed':
+        # [NEW] 마감 정책 탭: 마감된 정책(is_active=False)만 모아보기
+        # 마감된 정책만 필터링 후, 최신 마감일 순(최근에 끝난 것부터)으로 정렬
+        query = query.filter(Policy.is_active == False).order_by(Policy.end_date.desc().nulls_last())
+        print(f"🚫 정렬: 마감 정책 (is_active=False Only -> end_date DESC)")
     else:
         # 기본 정렬: 모집중 우선 -> ID 오름차순
         query = query.order_by(Policy.is_active.desc(), Policy.id.asc())

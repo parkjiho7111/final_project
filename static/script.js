@@ -16,6 +16,29 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
 const tinderData = window.tinderData || [];
 const allSlideData = window.allSlideData || [];
 
+// [NEW] 카테고리별 색상 매핑 (all.html과 동일하게 유지)
+const GENRE_COLORS = {
+    "취업": { main: "#4A9EA8", bg: "#F0FDFA" },
+    "취업/직무": { main: "#4A9EA8", bg: "#F0FDFA" },
+
+    "주거": { main: "#F48245", bg: "#FFF7ED" },
+    "주거/자립": { main: "#F48245", bg: "#FFF7ED" },
+
+    "금융": { main: "#D9B36C", bg: "#FEFCE8" },
+    "금융/생활비": { main: "#D9B36C", bg: "#FEFCE8" },
+
+    "창업": { main: "#FF5A5F", bg: "#FEF2F2" },
+    "창업/사업": { main: "#FF5A5F", bg: "#FEF2F2" },
+
+    "복지": { main: "#A855F7", bg: "#FAF5FF" },
+    "복지/문화": { main: "#A855F7", bg: "#FAF5FF" },
+
+    "교육": { main: "#3B82F6", bg: "#EFF6FF" },
+    "교육/자격증": { main: "#3B82F6", bg: "#EFF6FF" },
+
+    "default": { main: "#777777", bg: "#F3F4F6" }
+};
+
 // [신규] DB 장르(genre)에 따라 이미지를 자동으로 매칭해주는 함수
 function getCategoryImage(genre) {
     const map = {
@@ -42,9 +65,19 @@ function createCardHTML(item, isTinder = false) {
     const displayDesc = item.summary || "";         // DB 컬럼: summary
     const displayDate = item.period || "상시";      // DB 컬럼: period
     const displayLink = item.link || "";            // DB 컬럼: link (원문 연결용)
+    const displayRegion = item.region || "";        // [NEW] DB 컬럼: region
 
     // 2. 장르 기반 이미지 자동 생성
     const displayImage = getCategoryImage(displayGenre);
+
+    // [NEW] 장르 색상 가져오기
+    const colors = GENRE_COLORS[displayGenre] || GENRE_COLORS['default'];
+    // Inline styles for dynamic colors to ensure application without rebuild
+    const badgeStyle = `background-color: ${colors.bg}; color: ${colors.main}; border-color: ${colors.bg};`;
+    // Tailwind arbitrary values for hover/text (will work with CDN)
+    const textMainClass = `text-[${colors.main}]`;
+    const hoverTextClass = `hover:text-[${colors.main}]`;
+    const hoverGroupTextClass = `group-hover:text-[${colors.main}]`;
 
     // 3. 모달에 넘겨줄 데이터 객체 생성 (이미지 경로 포함)
     const modalData = {
@@ -54,7 +87,10 @@ function createCardHTML(item, isTinder = false) {
         desc: displayDesc,
         date: displayDate,
         image: displayImage,
-        link: displayLink
+        date: displayDate,
+        image: displayImage,
+        link: displayLink,
+        region: displayRegion // [NEW] 모달에 지역 정보 전달
     };
 
     // [중요] JSON 변환 (따옴표 깨짐 방지)
@@ -83,14 +119,17 @@ function createCardHTML(item, isTinder = false) {
                 </div>
                 <div class="card-content flex flex-col justify-between flex-grow p-8 text-left bg-white relative z-10">
                     <div>
-                        <span class="inline-block py-1 px-3 rounded-full bg-orange-50 text-primary-orange text-sm font-bold mb-3 border border-orange-100">${displayGenre}</span>
+                        <div class="flex items-center gap-1 mb-3">
+                            <span class="inline-block py-1 px-3 rounded-full text-sm font-bold border" style="${badgeStyle}">${displayGenre}</span>
+                            ${displayRegion ? `<span class="bg-gray-100 text-gray-600 font-bold px-2 py-1 rounded-full text-sm">${displayRegion}</span>` : ''}
+                        </div>
                         <h3 class="card-title text-2xl font-extrabold text-gray-900 leading-tight mb-3 line-clamp-2">${displayTitle}</h3>
                         <p class="card-desc text-base text-gray-500 font-medium line-clamp-3 leading-relaxed">${displayDesc}</p>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
                         <span class="card-date text-sm text-gray-400 font-bold"><i class="fa-regular fa-clock mr-1"></i> ${displayDate}</span>
                         
-                        <button class="relative z-50 text-sm font-bold text-gray-900 underline decoration-gray-300 underline-offset-4 p-2 hover:text-primary-orange transition-colors" 
+                        <button class="relative z-50 text-sm font-bold text-gray-900 underline decoration-gray-300 underline-offset-4 p-2 transition-colors ${hoverTextClass}" 
                                 data-json="${jsonString}"
                                 onclick="openCardModal(this); event.stopPropagation();">
                             자세히 보기
@@ -110,10 +149,11 @@ function createCardHTML(item, isTinder = false) {
                     <img src="${displayImage}" alt="${displayTitle}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                 </div>
                 <div class="card-content p-6 flex flex-col gap-2">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-primary-orange bg-orange-50 px-2 py-1 rounded-md">${displayGenre}</span>
+                    <div class="flex items-center gap-1">
+                        <span class="text-xs font-bold px-2 py-1 rounded-md" style="${badgeStyle}">${displayGenre}</span>
+                        ${displayRegion ? `<span class="bg-white text-gray-600 font-bold px-2 py-1 rounded-md text-xs group-hover:bg-gray-100 transition-colors">${displayRegion}</span>` : ''}
                     </div>
-                    <h3 class="card-title text-xl font-extrabold text-[#222] line-clamp-2">${displayTitle}</h3>
+                    <h3 class="card-title text-xl font-extrabold text-[#222] line-clamp-2 transition-colors ${hoverGroupTextClass}">${displayTitle}</h3>
                     <p class="card-desc text-sm text-[#666] font-medium line-clamp-2">${displayDesc}</p>
                     <span class="card-date text-xs text-[#888] mt-2">${displayDate}</span>
                 </div>
