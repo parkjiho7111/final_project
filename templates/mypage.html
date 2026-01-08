@@ -347,11 +347,43 @@
         <div class="col-span-1 md:col-span-2 mt-4">
             <div class="flex justify-between items-center mb-6 px-2">
                 <h3 class="font-bold text-2xl">내가 찜한 정책 ❤️</h3>
-                <a href="#"
-                    class="text-sm text-gray-500 hover:text-black font-medium underline decoration-gray-300 underline-offset-4">모두
-                    보기</a>
+                <div class="flex items-center gap-3">
+                    <!-- Edit Mode Controls (Hidden by default) -->
+                    <div id="edit-controls" class="hidden flex items-center gap-3 animate-fade-in">
+                        <label
+                            class="flex items-center gap-1 cursor-pointer select-none text-sm text-gray-600 hover:text-gray-900 group">
+                            <div class="relative">
+                                <input type="checkbox" id="check-all-likes" class="peer sr-only">
+                                <div
+                                    class="w-4 h-4 border-2 border-gray-300 rounded peer-checked:bg-primary-orange peer-checked:border-primary-orange transition-colors">
+                                </div>
+                                <i
+                                    class="fa-solid fa-check text-white text-[10px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                            </div>
+                            <span
+                                class="group-hover:underline decoration-transparent group-hover:decoration-gray-300 transition-all">전체
+                                선택</span>
+                        </label>
+
+                        <button id="btn-delete-likes"
+                            class="px-3 py-1.5 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-500 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm hover:shadow">
+                            <i class="fa-regular fa-trash-can"></i>
+                            <span>삭제</span>
+                        </button>
+
+                        <div class="w-[1px] h-4 bg-gray-300 mx-1"></div>
+                    </div>
+
+                    <!-- Toggle Button -->
+                    <button id="btn-manage-likes"
+                        class="text-sm text-gray-500 hover:text-black font-medium underline decoration-gray-300 underline-offset-4 transition-colors">
+                        편집
+                    </button>
+                </div>
             </div>
             <div id="mypage-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+            <!-- Pagination Container -->
+            <div id="pagination-container" class="flex justify-center flex-wrap gap-2 py-8 mt-4"></div>
         </div>
     </main>
 

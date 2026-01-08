@@ -37,6 +37,10 @@ class IconUpdate(BaseModel):
     user_email: str
     icon_name: str
 
+class LikeDeleteRequest(BaseModel):
+    user_email: str
+    policy_ids: List[int]
+
 # ==================== [API 엔드포인트] ====================
 
 # 4. 사용자 프로필 및 활동 지수 조회 (우선 배치)
@@ -167,35 +171,66 @@ def check_action_status(user_email: str, policy_id: int, db: Session = Depends(g
 
 
 # 2. 찜한 정책 목록 조회 (마이페이지용)
+# 2. 찜한 정책 목록 조회 (마이페이지용 - 페이지네이션 적용)
 @router.get("/likes")
-def get_liked_policies(user_email: str, db: Session = Depends(get_db)):
+def get_liked_policies(
+    user_email: str, 
+    page: int = 1, 
+    limit: int = 12, 
+    db: Session = Depends(get_db)
+):
     """
-    해당 유저가 'like'한 정책들의 상세 정보를 반환합니다.
+    해당 유저가 'like'한 정책들의 상세 정보를 반환합니다. (페이지네이션 적용)
     """
-    # 1. UserAction 테이블에서 해당 유저의 'like' 기록 조회 (최신순)
-    #    중복 like가 있을 경우를 대비해 DISTINCT나 로직 처리 필요하지만 일단 단순 조회
-    actions = db.query(UserAction)\
-        .filter(UserAction.user_email == user_email, UserAction.type == 'like')\
-        .order_by(UserAction.created_at.desc())\
-        .all()
+    # 1. 쿼리 베이스 (최신순 정렬)
+    query = db.query(UserAction).filter(
+        UserAction.user_email == user_email, 
+        UserAction.type == 'like'
+    )
+    
+    # 2. 전체 개수 계산
+    total_count = query.count()
+    if total_count == 0:
+        return {
+            "policies": [],
+            "total_count": 0,
+            "total_pages": 0,
+            "current_page": page
+        }
+
+    total_pages = (total_count + limit - 1) // limit
+    
+    # 페이지 보정
+    if page < 1: page = 1
+    if page > total_pages: page = total_pages
+
+    offset = (page - 1) * limit
+
+    # 3. 페이지네이션 적용하여 액션 조회
+    actions = query.order_by(UserAction.created_at.desc())\
+                   .offset(offset)\
+                   .limit(limit)\
+                   .all()
     
     if not actions:
-        return []
+         return {
+            "policies": [],
+            "total_count": total_count,
+            "total_pages": total_pages,
+            "current_page": page
+        }
 
-    # 2. Policy ID 리스트 추출
+    # 4. Policy ID 리스트 추출 (기존 로직 유지)
     policy_ids = [a.policy_id for a in actions]
     
-    # 3. Policy 테이블에서 정보 조회
-    #    policy_ids에 포함된 정책들을 한 번에 가져옴
+    # 5. Policy 정보 조회
     policies = db.query(Policy).filter(Policy.id.in_(policy_ids)).all()
-    
-    # 4. 순서 보장 및 데이터 포맷팅
-    #    DB in_ 쿼리는 순서를 보장하지 않으므로, actions 순서대로 정렬하거나 딕셔너리로 매핑
     policy_map = {p.id: p for p in policies}
     
     result = []
-    seen_ids = set() # 중복 제거용
+    seen_ids = set()
 
+    # 6. 순서대로 매핑
     for action in actions:
         pid = action.policy_id
         if pid in seen_ids:
@@ -205,7 +240,7 @@ def get_liked_policies(user_email: str, db: Session = Depends(get_db)):
         if policy:
             seen_ids.add(pid)
             
-            # 카테고리 이미지 처리
+            # 이미지 처리
             img_src = get_image_for_category(policy.genre)
             
             # 날짜 처리
@@ -223,11 +258,34 @@ def get_liked_policies(user_email: str, db: Session = Depends(get_db)):
                 "period": date_str,
                 "image": img_src,
                 "link": policy.link or "#",
-                "region": policy.region or "전국",
-                "colorCode": categoryColorMap.get(policy.genre, "#777777")
+                "region": policy.region or "전국"
             })
             
-    return result
+    return {
+        "policies": result,
+        "total_count": total_count,
+        "total_pages": total_pages,
+        "current_page": page
+    }
+
+
+# 2-1. 찜한 정책 선택 삭제 [NEW]
+@router.post("/likes/delete")
+def delete_liked_policies(data: LikeDeleteRequest, db: Session = Depends(get_db)):
+    """
+    사용자가 선택한 찜한 정책들을 일괄 삭제합니다.
+    """
+    # 1. 조건에 맞는(이메일, like타입, 정책ID리스트) 데이터 삭제
+    #    synchronize_session=False는 대량 삭제 시 세션 동기화 비용을 줄임
+    deleted_count = db.query(UserAction).filter(
+        UserAction.user_email == data.user_email,
+        UserAction.type == 'like',
+        UserAction.policy_id.in_(data.policy_ids)
+    ).delete(synchronize_session=False)
+    
+    db.commit()
+    
+    return {"message": "Deleted successfully", "count": deleted_count}
 
 
 # 3. 관심 키워드 트렌드 통계 (차트용)
