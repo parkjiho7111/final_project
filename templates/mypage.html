@@ -759,6 +759,41 @@
     {% include "components/policy_modal.html" %}
 
     <script src="/static/policy_modal.js"></script>
+
+    <script>
+        // [New] 알림 클릭 시 마감임박 정책 자동 오픈 로직
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const policyId = params.get('policy_id');
+            const openModal = params.get('open_modal');
+
+            if (policyId && openModal === 'true') {
+                const listContainer = document.getElementById('mypage-list');
+                if (!listContainer) return;
+
+                // 1. 이미 로드되어 있을 경우 (혹시나)
+                const existingCard = listContainer.querySelector(`.policy-card[data-id="${policyId}"]`);
+                if (existingCard) {
+                    openCardModal(existingCard);
+                    return;
+                }
+
+                // 2. 비동기 로드 대기 (MutationObserver)
+                const observer = new MutationObserver((mutations) => {
+                    const card = listContainer.querySelector(`.policy-card[data-id="${policyId}"]`);
+                    if (card) {
+                        openCardModal(card);
+                        observer.disconnect(); // 찾았으면 감시 중단
+                    }
+                });
+
+                observer.observe(listContainer, { childList: true, subtree: true });
+
+                // 3. 타임아웃 (10초 뒤 감시 중단 - 메모리 누수 방지)
+                setTimeout(() => observer.disconnect(), 10000);
+            }
+        });
+    </script>
 </body>
 
 </html>

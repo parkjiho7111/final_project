@@ -184,8 +184,11 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
         pass
     
     # 4. 프론트엔드로 리다이렉트 (로그인 성공 처리)
-    # 쿼리 파라미터에 정보를 담아 보냅니다. (보안상 좋진 않지만 MVP용)
-    redirect_url = f"/?social_login=success&email={email}&name={name}&provider=google"
+    # [수정] landing.html(/) 대신 nav.html이 있는 main.html로 리다이렉트
+    # [안전장치] 이름에 한글/특수문자가 있을 수 있으므로 URL 인코딩 처리
+    from urllib.parse import quote
+    encoded_name = quote(name) if name else "Member"
+    redirect_url = f"/main.html?social_login=success&email={email}&name={encoded_name}&provider=google"
     return RedirectResponse(redirect_url)
 
 # ============================================================
@@ -251,6 +254,10 @@ async def naver_callback(code: str, state: str, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
     
-    # 4. 프론트엔드로 리다이렉트
-    redirect_url = f"/?social_login=success&email={email}&name={name}&provider=naver"
+    # 4. 프론트엔드로 리다이렉트 (로그인 성공 처리)
+    # [수정] landing.html(/) 대신 nav.html이 있는 main.html로 리다이렉트
+    # [안전장치] 이름에 한글/특수문자가 있을 수 있으므로 URL 인코딩 처리
+    from urllib.parse import quote
+    encoded_name = quote(name) if name else "Member"
+    redirect_url = f"/main.html?social_login=success&email={email}&name={encoded_name}&provider=naver"
     return RedirectResponse(redirect_url)
