@@ -61,6 +61,7 @@ def serialize_policy(policy):
 async def read_main(
     request: Request, 
     region: Optional[str] = None,  # URL 파라미터: 랜딩페이지에서 선택한 지역 ID
+    exclude_ids: Optional[str] = None,  # 새로 추가: 쉼표로 구분된 ID 문자열
     db: Session = Depends(get_db)
 ):
     target_categories = ["취업", "창업", "주거", "금융", "교육", "복지"]
@@ -73,11 +74,25 @@ async def read_main(
         if db_region_name:
             filter_regions = [db_region_name, '전국']  # 선택 지역 + 전국
     
+    # 제외할 ID 목록 파싱
+    exclude_id_list = []
+    if exclude_ids:
+        try:
+            exclude_id_list = [int(id.strip()) for id in exclude_ids.split(',') if id.strip()]
+        except ValueError:
+            exclude_id_list = []
+    
     # 1. 카테고리별 랜덤 추출 (지역 필터 적용)
     for cat in target_categories:
-        policies = db.query(Policy)\
+        query = db.query(Policy)\
             .filter(Policy.genre.contains(cat))\
-            .filter(Policy.region.in_(filter_regions))\
+            .filter(Policy.region.in_(filter_regions))
+        
+        # 제외할 ID가 있으면 필터 추가
+        if exclude_id_list:
+            query = query.filter(~Policy.id.in_(exclude_id_list))
+        
+        policies = query\
             .order_by(func.random())\
             .limit(3)\
             .all()
