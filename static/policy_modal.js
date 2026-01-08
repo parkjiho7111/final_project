@@ -228,6 +228,9 @@ window.openCardModal = function (element) {
 
                             // [NEW] 차트 실시간 업데이트
                             if (window.updateMyPageChart) window.updateMyPageChart();
+
+                            // [NEW] 프로필(활동 지수) 실시간 업데이트
+                            if (window.loadUserProfile) window.loadUserProfile();
                         })
                         .catch(err => console.error("찜하기 오류:", err));
 
@@ -269,6 +272,9 @@ window.openCardModal = function (element) {
 
                             // [NEW] 차트 실시간 업데이트
                             if (window.updateMyPageChart) window.updateMyPageChart();
+
+                            // [NEW] 프로필(활동 지수) 실시간 업데이트
+                            if (window.loadUserProfile) window.loadUserProfile();
                         })
                         .catch(err => console.error("찜 취소 오류:", err));
                 }

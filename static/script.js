@@ -16,6 +16,81 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
 const tinderData = window.tinderData || [];
 const allSlideData = window.allSlideData || [];
 
+// [NEW] 사용자 프로필 및 활동 지수 로드 함수 (전역 등록 for 실시간 연동)
+window.loadUserProfile = function () {
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) return;
+
+    fetch(`/api/mypage/profile?user_email=${userEmail}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            // 1) 이름 & 이메일
+            const nameEl = document.getElementById('user-profile-name');
+            const emailEl = document.getElementById('user-profile-email');
+            if (nameEl) nameEl.innerText = `${data.name} 님 👋`;
+            if (emailEl) emailEl.innerText = data.email;
+
+            // 2) 뱃지
+            const badgesEl = document.getElementById('user-profile-badges');
+            if (badgesEl) {
+                let html = '';
+                if (data.region_badge) {
+                    html += `<span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg">${data.region_badge}</span>`;
+                }
+                if (data.level_badge) {
+                    html += `<span class="px-3 py-1 bg-orange-100 text-primary-orange text-xs font-bold rounded-lg">${data.level_badge}</span>`;
+                }
+                badgesEl.innerHTML = html;
+            }
+
+            // 3) 활동 지수
+            const scoreTextEl = document.getElementById('activity-score-text');
+            const progressBarEl = document.getElementById('activity-progress-bar');
+
+            if (scoreTextEl) {
+                scoreTextEl.innerHTML = `${data.activity_index}% <span class="text-sm font-normal text-gray-500">${data.level_badge}</span>`;
+            }
+            if (progressBarEl) {
+                const width = Math.min(data.activity_index, 100);
+                progressBarEl.style.width = `${width}%`;
+            }
+
+            // 4) 카운트
+            const likeCountEl = document.getElementById('user-like-count');
+            const applyCountEl = document.getElementById('user-apply-count');
+
+            if (likeCountEl) likeCountEl.innerText = data.like_count;
+            if (likeCountEl) likeCountEl.innerText = data.like_count;
+            if (applyCountEl) applyCountEl.innerText = data.apply_count;
+
+            // 5) 프로필 아이콘
+            const profileImg = document.getElementById('user-profile-img');
+            if (profileImg) {
+                // 직접 이미지 경로 설정
+                const iconName = data.profile_icon || "avatar_1";
+                profileImg.src = `/static/images/avatars/${iconName}.png`;
+            }
+
+            // [NEW] MBTI 데이터 저장 (전역 변수 활용)
+            if (data.mbti) {
+                window.userMbtiData = data.mbti;
+                // 마이페이지 MBTI 카드의 텍스트 업데이트 (선택 사항)
+                const mbtiCardTitle = document.querySelector('#mbti-card-title'); // id 필요 시 html 수정
+                if (mbtiCardTitle) mbtiCardTitle.innerText = data.mbti.type_name;
+            } else {
+                window.userMbtiData = null;
+            }
+        })
+        .catch(err => {
+            console.error("Profile Load Error:", err);
+        });
+};
+
 // [NEW] 카테고리별 색상 매핑 (all.html과 동일하게 유지)
 const GENRE_COLORS = {
     "취업": { main: "#4A9EA8", bg: "#F0FDFA" },
@@ -769,23 +844,12 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!userEmail) {
             mypageList.innerHTML = `<div class="empty-state"><p>로그인이 필요한 서비스입니다.</p></div>`;
         } else {
-            // 1. 찜한 정책 목록 가져오기
-            fetch(`/api/mypage/likes?user_email=${userEmail}`)
-                .then(res => res.json())
-                .then(data => {
-                    if (data.length === 0) {
-                        mypageList.innerHTML = `<div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>아직 찜한 정책이 없어요.</p></div>`;
-                    } else {
-                        mypageList.innerHTML = data.map(item => createCardHTML(item, false)).join('');
-                        if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-                            gsap.from("#mypage-list .policy-card", { y: 50, opacity: 0, duration: 0.6, stagger: 0.1, scrollTrigger: { trigger: "#mypage-list", start: "top 80%" } });
-                        }
-                    }
-                })
-                .catch(err => {
-                    console.error("Link Load Error:", err);
-                    mypageList.innerHTML = `<div class="empty-state"><p>데이터를 불러오는 중 오류가 발생했습니다.</p></div>`;
-                });
+
+
+            // [NEW] 1.5. 사용자 프로필 및 활동 지수 가져오기 (함수 호출로 대체)
+            if (typeof window.loadUserProfile === 'function') {
+                window.loadUserProfile();
+            }
 
             // 2. 차트 데이터 가져오기
 
@@ -828,7 +892,360 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             // 최초 실행
+            // 최초 실행
             window.updateMyPageChart();
         }
     }
+
+    // --------------------------------------------------------
+    // [MODAL] Profile Avatar Selection
+    // --------------------------------------------------------
+    const avatarModal = document.getElementById('avatar-modal');
+    const btnEditProfile = document.getElementById('btn-edit-profile');
+    const btnCloseModal = document.getElementById('close-avatar-modal');
+    const btnSaveAvatar = document.getElementById('save-avatar-btn');
+    const avatarOptions = document.querySelectorAll('.avatar-option');
+
+    let selectedAvatar = null;
+
+    if (avatarModal && btnEditProfile) {
+        // Open Modal
+        btnEditProfile.addEventListener('click', () => {
+            avatarModal.classList.remove('hidden', 'pointer-events-none');
+            // Slight delay for animation
+            setTimeout(() => {
+                avatarModal.classList.remove('opacity-0');
+            }, 10);
+        });
+
+        // Close Modal
+        function closeAvatarModal() {
+            avatarModal.classList.add('opacity-0');
+            setTimeout(() => {
+                avatarModal.classList.add('hidden', 'pointer-events-none');
+            }, 300);
+        }
+
+        if (btnCloseModal) btnCloseModal.addEventListener('click', closeAvatarModal);
+
+        // Select logic
+        avatarOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                // UI Reset
+                avatarOptions.forEach(o => {
+                    o.classList.remove('ring-4', 'ring-orange-200', 'bg-orange-50');
+                    const indicator = o.querySelector('.active-indicator');
+                    if (indicator) {
+                        indicator.classList.add('hidden');
+                        indicator.classList.remove('flex');
+                    }
+                });
+
+                // Active State
+                opt.classList.add('ring-4', 'ring-orange-200', 'bg-orange-50');
+                const activeIndicator = opt.querySelector('.active-indicator');
+                if (activeIndicator) {
+                    activeIndicator.classList.remove('hidden');
+                    activeIndicator.classList.add('flex');
+                }
+
+                selectedAvatar = opt.getAttribute('data-icon');
+            });
+        });
+
+        // Save Logic
+        if (btnSaveAvatar) {
+            btnSaveAvatar.addEventListener('click', () => {
+                if (!selectedAvatar) {
+                    alert('캐릭터를 선택해주세요!');
+                    return;
+                }
+
+                const userEmail = localStorage.getItem('userEmail');
+                if (!userEmail) return;
+
+                fetch('/api/mypage/profile/icon', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_email: userEmail,
+                        icon_name: selectedAvatar
+                    })
+                })
+                    .then(res => {
+                        if (res.ok) {
+                            closeAvatarModal();
+                            // Refresh Profile
+                            if (typeof window.loadUserProfile === 'function') {
+                                window.loadUserProfile();
+                            }
+                        } else {
+                            alert('저장에 실패했습니다.');
+                        }
+                    })
+                    .catch(err => console.error(err));
+            });
+        }
+    }
+
+    // --------------------------------------------------------
+    // [NEW] MyPage Manager (찜한 정책 관리)
+    // --------------------------------------------------------
+    const MyPageManager = {
+        isEditMode: false,
+        currentPage: 1,
+        itemsPerPage: 12,
+        btnManage: document.getElementById('btn-manage-likes'),
+        editControls: document.getElementById('edit-controls'),
+        checkAll: document.getElementById('check-all-likes'),
+        btnDelete: document.getElementById('btn-delete-likes'),
+        listContainer: document.getElementById('mypage-list'),
+        paginationContainer: document.getElementById('pagination-container'),
+
+        init: function () {
+            // 초기 찜 목록 로드 (이제 API가 변경되었으므로 여기서 호출)
+            if (this.listContainer) {
+                this.fetchLikes(1);
+            }
+
+            if (!this.btnManage) return;
+            this.bindEvents();
+        },
+
+        bindEvents: function () {
+            // Toggle Edit Mode
+            this.btnManage.addEventListener('click', () => this.toggleEditMode());
+
+            // Select All
+            if (this.checkAll) {
+                this.checkAll.addEventListener('change', (e) => {
+                    const checkboxes = document.querySelectorAll('.policy-check');
+                    checkboxes.forEach(cb => cb.checked = e.target.checked);
+                });
+            }
+
+            // Delete Action
+            if (this.btnDelete) {
+                this.btnDelete.addEventListener('click', () => this.deleteSelected());
+            }
+        },
+
+        // [NEW] API 데이터 로드 (페이지네이션 지원)
+        fetchLikes: function (page) {
+            const userEmail = localStorage.getItem('userEmail');
+            if (!userEmail) {
+                if (this.listContainer) this.listContainer.innerHTML = `<div class="empty-state"><p>로그인이 필요한 서비스입니다.</p></div>`;
+                return;
+            }
+
+            this.currentPage = page;
+
+            // 로딩 표시 (선택사항)
+            // if (this.listContainer) this.listContainer.style.opacity = '0.5';
+
+            fetch(`/api/mypage/likes?user_email=${userEmail}&page=${page}&limit=${this.itemsPerPage}`)
+                .then(res => res.json())
+                .then(data => {
+                    // if (this.listContainer) this.listContainer.style.opacity = '1';
+
+                    const policies = data.policies || [];
+                    const totalCount = data.total_count || 0;
+
+                    if (policies.length === 0) {
+                        // 데이터 없음
+                        if (this.listContainer) this.listContainer.innerHTML = `<div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>아직 찜한 정책이 없어요.</p></div>`;
+                        if (this.paginationContainer) this.paginationContainer.innerHTML = "";
+                    } else {
+                        // 리스트 렌더링
+                        if (this.listContainer) {
+                            this.listContainer.innerHTML = policies.map(item => createCardHTML(item, false)).join('');
+                        }
+
+                        // 페이지네이션 렌더링
+                        this.renderPagination(totalCount);
+
+                        // 편집 모드 유지 중이라면 체크박스 다시 생성
+                        if (this.isEditMode) {
+                            this.addCheckboxesToCards();
+                        }
+
+                        // 애니메이션
+                        if (typeof gsap !== 'undefined') {
+                            gsap.from("#mypage-list .policy-card", { y: 20, opacity: 0, duration: 0.4, stagger: 0.05, clearProps: "all" });
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Link Load Error:", err);
+                    if (this.listContainer) this.listContainer.innerHTML = `<div class="empty-state"><p>데이터를 불러오는 중 오류가 발생했습니다.</p></div>`;
+                });
+        },
+
+        renderPagination: function (totalItems) {
+            if (!this.paginationContainer) return;
+            this.paginationContainer.innerHTML = "";
+
+            const totalPages = Math.ceil(totalItems / this.itemsPerPage);
+            if (totalPages <= 1) return;
+
+            const baseClass = "w-10 h-10 rounded-full text-sm font-bold transition-all flex items-center justify-center border";
+            const activeClass = `${baseClass} bg-[#777777] text-white border-[#777777] shadow-md transform scale-105`;
+            const inactiveClass = `${baseClass} bg-white text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-primary-teal`;
+            const navClass = "px-4 h-10 rounded-full text-sm font-bold transition-all flex items-center justify-center border bg-white text-gray-500 border-gray-200 hover:bg-gray-100 hover:text-primary-teal";
+
+            const createBtn = (text, onClick, className) => {
+                const btn = document.createElement('button');
+                btn.innerText = text;
+                btn.className = className;
+                btn.addEventListener('click', onClick);
+                return btn;
+            };
+
+            // 이전
+            if (this.currentPage > 1) {
+                this.paginationContainer.appendChild(createBtn('이전', () => this.fetchLikes(this.currentPage - 1), navClass));
+            }
+
+            // 페이지 번호 (간단하게 구현: 1~Total)
+            // * all.html 처럼 ... 처리 하려면 로직 추가 필요. 여기선 간단히 10페이지 이하는 다 보여주고, 많으면 앞뒤만 보여주는 식으로 개선 가능
+            // * 여기서는 all.html과 유사한 "스마트 페이지네이션" 로직 적용
+
+            const delta = 2;
+            let startPage = Math.max(1, this.currentPage - delta);
+            let endPage = Math.min(totalPages, this.currentPage + delta);
+
+            if (startPage > 1) {
+                this.paginationContainer.appendChild(createBtn(1, () => this.fetchLikes(1), this.currentPage === 1 ? activeClass : inactiveClass));
+                if (startPage > 2) {
+                    const span = document.createElement('span'); span.innerText = "..."; span.className = "px-2 text-gray-500";
+                    this.paginationContainer.appendChild(span);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                this.paginationContainer.appendChild(createBtn(i, () => this.fetchLikes(i), i === this.currentPage ? activeClass : inactiveClass));
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    const span = document.createElement('span'); span.innerText = "..."; span.className = "px-2 text-gray-500";
+                    this.paginationContainer.appendChild(span);
+                }
+                this.paginationContainer.appendChild(createBtn(totalPages, () => this.fetchLikes(totalPages), this.currentPage === totalPages ? activeClass : inactiveClass));
+            }
+
+            // 다음
+            if (this.currentPage < totalPages) {
+                this.paginationContainer.appendChild(createBtn('다음', () => this.fetchLikes(this.currentPage + 1), navClass));
+            }
+        },
+
+        toggleEditMode: function () {
+            this.isEditMode = !this.isEditMode;
+
+            if (this.isEditMode) {
+                this.btnManage.innerText = "완료";
+                this.btnManage.classList.replace('text-gray-500', 'text-primary-orange');
+                this.btnManage.classList.add('font-bold');
+                this.btnManage.classList.remove('underline');
+
+                this.editControls.classList.remove('hidden');
+                this.editControls.classList.add('flex');
+                this.addCheckboxesToCards();
+            } else {
+                this.btnManage.innerText = "편집";
+                this.btnManage.classList.replace('text-primary-orange', 'text-gray-500');
+                this.btnManage.classList.remove('font-bold');
+                this.btnManage.classList.add('underline');
+
+                this.editControls.classList.add('hidden');
+                this.editControls.classList.remove('flex');
+                if (this.checkAll) this.checkAll.checked = false;
+                this.removeCheckboxesFromCards();
+            }
+        },
+
+        addCheckboxesToCards: function () {
+            if (!this.listContainer) return;
+            const cards = this.listContainer.querySelectorAll('.policy-card');
+            cards.forEach(card => {
+                if (card.querySelector('.check-overlay')) return;
+                const policyId = card.getAttribute('data-id');
+                const overlay = document.createElement('div');
+                overlay.className = 'check-overlay absolute inset-0 z-20 bg-black/5 cursor-pointer flex items-start justify-end p-4 animate-fade-in rounded-[20px]';
+                overlay.onclick = (e) => {
+                    e.stopPropagation();
+                    if (e.target === overlay) {
+                        const cb = overlay.querySelector('input');
+                        cb.checked = !cb.checked;
+                    }
+                };
+                overlay.innerHTML = `
+                <div class="relative pointer-events-none">
+                    <input type="checkbox" class="policy-check peer sr-only" value="${policyId}">
+                    <div class="w-6 h-6 bg-white border-2 border-gray-300 rounded-full peer-checked:bg-primary-orange peer-checked:border-primary-orange transition-all shadow-sm flex items-center justify-center">
+                        <i class="fa-solid fa-check text-white text-[10px] opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                    </div>
+                </div>`;
+                card.classList.add('relative');
+                card.appendChild(overlay);
+            });
+        },
+
+        removeCheckboxesFromCards: function () {
+            if (!this.listContainer) return;
+            const overlays = this.listContainer.querySelectorAll('.check-overlay');
+            overlays.forEach(el => el.remove());
+        },
+
+        deleteSelected: async function () {
+            const checkedBoxes = document.querySelectorAll('.policy-check:checked');
+            if (checkedBoxes.length === 0) {
+                alert("삭제할 정책을 선택해주세요.");
+                return;
+            }
+
+            if (!confirm(`선택한 ${checkedBoxes.length}개의 정책을 찜 목록에서 삭제하시겠습니까?`)) {
+                return;
+            }
+
+            const ids = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+            const userEmail = localStorage.getItem('userEmail');
+
+            try {
+                const res = await fetch('/api/mypage/likes/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_email: userEmail, policy_ids: ids })
+                });
+
+                const result = await res.json();
+                if (res.ok) {
+                    // 성공 시 현재 페이지 재로딩 (빈 페이지 되면 처리 로직은 fetchLikes 내부는 아니지만, 
+                    // 보통 백엔드가 빈 리스트 주면 UI 처리됨. 
+                    // 단, 현재 페이지가 비게 되면 page-1로 가는게 좋음. 간단히 현재 페이지 호출 후 데이터 없으면 page-1 호출 등의 로직 추가 가능)
+
+                    // 체크박스 초기화
+                    if (this.checkAll) this.checkAll.checked = false;
+
+                    // 활동 지수 업데이트
+                    if (typeof window.loadUserProfile === 'function') {
+                        setTimeout(() => window.loadUserProfile(), 500);
+                    }
+
+                    // 재로딩
+                    this.fetchLikes(this.currentPage);
+
+                } else {
+                    alert(`삭제 실패: ${result.detail || '오류가 발생했습니다.'}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("서버 통신 중 오류가 발생했습니다.");
+            }
+        }
+    };
+
+    // Initialize
+    MyPageManager.init();
 });

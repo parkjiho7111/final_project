@@ -297,16 +297,16 @@
                 <div class="absolute right-0 top-0 w-24 h-full bg-gradient-to-l from-orange-50 to-transparent"></div>
                 <div class="flex items-center gap-6 relative z-10">
                     <div class="relative">
-                        <img src="https://placehold.co/120x120/F48245/ffffff?text=User" alt="Profile"
-                            class="w-24 h-24 rounded-full border-4 border-orange-50 shadow-sm object-cover group-hover:scale-105 transition-transform">
-                        <button
+                        <img id="user-profile-img" src="/static/images/avatars/avatar_1.png" alt="Profile"
+                            class="w-24 h-24 rounded-full border-4 border-orange-50 shadow-sm object-cover bg-white">
+                        <button id="btn-edit-profile"
                             class="absolute bottom-0 right-0 bg-gray-900 text-white w-8 h-8 rounded-full shadow-md hover:bg-primary-orange transition-colors flex items-center justify-center"><i
                                 class="fa-solid fa-pen text-xs"></i></button>
                     </div>
                     <div>
-                        <h2 class="text-xl font-bold text-gray-900 mb-1">김청년 님 👋</h2>
-                        <p class="text-gray-500 text-sm mb-3">youth_kim@example.com</p>
-                        <div class="flex gap-2">
+                        <h2 id="user-profile-name" class="text-xl font-bold text-gray-900 mb-1">김청년 님 👋</h2>
+                        <p id="user-profile-email" class="text-gray-500 text-sm mb-3">youth_kim@example.com</p>
+                        <div id="user-profile-badges" class="flex gap-2 flex-wrap">
                             <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg">#서울시</span>
                             <span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg">#취업준비</span>
                         </div>
@@ -318,9 +318,11 @@
                 <div
                     class="col-span-2 sm:col-span-1 rounded-[30px] bg-[#FDF8F3] p-6 shadow-sm border border-orange-100 flex flex-col justify-center hover:shadow-md transition-shadow">
                     <p class="text-sm text-primary-orange font-bold mb-1">나의 활동 지수</p>
-                    <p class="text-xl font-bold text-gray-800">상위 15% 🔥</p>
+                    <p id="activity-score-text" class="text-xl font-bold text-gray-800">0% <span
+                            class="text-sm font-normal text-gray-500">계산 중...</span></p>
                     <div class="w-full bg-orange-100 h-2 rounded-full mt-3 overflow-hidden">
-                        <div class="bg-primary-orange h-full rounded-full" style="width: 85%"></div>
+                        <div id="activity-progress-bar" class="bg-primary-orange h-full rounded-full" style="width: 0%">
+                        </div>
                     </div>
                 </div>
                 <div
@@ -329,14 +331,14 @@
                         <div class="text-gray-300 text-2xl mb-1 transition-colors group-hover:text-primary-red"><i
                                 class="fa-solid fa-heart"></i></div>
                         <p class="text-xs text-gray-400 font-bold mb-1">찜한 정책</p>
-                        <p class="text-xl font-extrabold text-gray-800">12</p>
+                        <p id="user-like-count" class="text-xl font-extrabold text-gray-800">-</p>
                     </div>
                     <div class="w-[1px] h-12 bg-gray-100"></div>
                     <div class="text-center">
                         <div class="text-gray-300 text-2xl mb-1 transition-colors group-hover:text-primary-teal"><i
                                 class="fa-solid fa-paper-plane"></i></div>
                         <p class="text-xs text-gray-400 font-bold mb-1">신청 완료</p>
-                        <p class="text-xl font-extrabold text-gray-800">3</p>
+                        <p id="user-apply-count" class="text-xl font-extrabold text-gray-800">-</p>
                     </div>
                 </div>
             </div>
@@ -345,11 +347,43 @@
         <div class="col-span-1 md:col-span-2 mt-4">
             <div class="flex justify-between items-center mb-6 px-2">
                 <h3 class="font-bold text-2xl">내가 찜한 정책 ❤️</h3>
-                <a href="#"
-                    class="text-sm text-gray-500 hover:text-black font-medium underline decoration-gray-300 underline-offset-4">모두
-                    보기</a>
+                <div class="flex items-center gap-3">
+                    <!-- Edit Mode Controls (Hidden by default) -->
+                    <div id="edit-controls" class="hidden flex items-center gap-3 animate-fade-in">
+                        <label
+                            class="flex items-center gap-1 cursor-pointer select-none text-sm text-gray-600 hover:text-gray-900 group">
+                            <div class="relative">
+                                <input type="checkbox" id="check-all-likes" class="peer sr-only">
+                                <div
+                                    class="w-4 h-4 border-2 border-gray-300 rounded peer-checked:bg-primary-orange peer-checked:border-primary-orange transition-colors">
+                                </div>
+                                <i
+                                    class="fa-solid fa-check text-white text-[10px] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                            </div>
+                            <span
+                                class="group-hover:underline decoration-transparent group-hover:decoration-gray-300 transition-all">전체
+                                선택</span>
+                        </label>
+
+                        <button id="btn-delete-likes"
+                            class="px-3 py-1.5 bg-gray-100 hover:bg-red-50 text-gray-600 hover:text-red-500 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 shadow-sm hover:shadow">
+                            <i class="fa-regular fa-trash-can"></i>
+                            <span>삭제</span>
+                        </button>
+
+                        <div class="w-[1px] h-4 bg-gray-300 mx-1"></div>
+                    </div>
+
+                    <!-- Toggle Button -->
+                    <button id="btn-manage-likes"
+                        class="text-sm text-gray-500 hover:text-black font-medium underline decoration-gray-300 underline-offset-4 transition-colors">
+                        편집
+                    </button>
+                </div>
             </div>
             <div id="mypage-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+            <!-- Pagination Container -->
+            <div id="pagination-container" class="flex justify-center flex-wrap gap-2 py-8 mt-4"></div>
         </div>
     </main>
 
@@ -445,16 +479,18 @@
         document.addEventListener("DOMContentLoaded", () => {
             if (window.playHeaderAnimation) setTimeout(() => { window.playHeaderAnimation(); }, 100);
 
-            const MBTI_TYPES = {
-                'edu': { title: '🎓 끊임없이 성장하는 지식 탐험가', type: '교육/자격증', color: '#4A9EA8', tags: ['#자기개발', '#자격증취득', '#평생학습'] },
-                'housing': { title: '🏡 로망을 실현하는 공간 설계자', type: '주거/자립', color: '#F48245', tags: ['#독립생활', '#주거안정', '#내집마련'] },
-                'finance': { title: '💰 빈틈없이 계획하는 자산 전략가', type: '금융/생활비', color: '#D9B36C', tags: ['#목돈마련', '#재테크', '#합리적소비'] },
-                'welfare': { title: '🍀 일상을 즐기는 낭만 수집가', type: '복지/문화', color: '#614AA8', tags: ['#워라밸', '#문화생활', '#심리안정'] },
-                'job': { title: '💼 비전을 좇는 열정 개척자', type: '취업/직무', color: '#6CD984', tags: ['#커리어성장', '#직무전문성', '#도전'] },
-                'startup': { title: '🚀 세상을 바꾸는 혁신 리더', type: '창업/사업', color: '#FF4343', tags: ['#창업도전', '#혁신아이디어', '#CEO'] }
+            // [NEW] MBTI 결과에 따른 색상/이미지 매핑 (백엔드 데이터 보완용)
+            // 텍스트 기반 매칭이 어려우므로 랜덤 또는 기본값 사용
+            // 추후 백엔드에서 category 코드를 내려주면 더 정확해짐
+            const MBTI_COLORS = {
+                'default': '#6CD984',
+                '취업': '#00C4B4',
+                '창업': '#FF6B6B',
+                '주거': '#F48245',
+                '금융': '#FFD166',
+                '교육': '#4D96FF',
+                '복지': '#FF9F43'
             };
-
-            const CURRENT_RESULT_KEY = 'job';
 
             const mbtiModal = document.getElementById('mbti-modal');
             const mbtiLoading = document.getElementById('mbti-loading');
@@ -464,6 +500,9 @@
             const resultTitle = document.getElementById('result-title');
             const resultType = document.getElementById('result-type');
             const resultTags = document.getElementById('result-tags');
+
+            // [NEW] 설명 텍스트 추가 (디자인에 없던 요소라 모달 하단이나 적절한 곳에 추가 고려)
+            // 현재는 콘솔에만 찍거나 태그 밑에 작게 추가
 
             let loadingAnimation = null;
 
@@ -490,38 +529,64 @@
                 type();
             }
 
-            function setMbtiResult(key) {
-                const data = MBTI_TYPES[key];
+            function setMbtiResult(data) {
                 if (!data) return;
 
-                resultTitle.innerText = data.title;
-                resultType.innerText = data.type;
-                resultTags.innerHTML = data.tags.map(tag =>
+                // 1. 데이터 바인딩
+                resultTitle.innerText = data.subtitle || "당신의 정책 성향은?";
+                resultType.innerText = data.type_name || "준비중";
+
+                // 2. 태그 바인딩
+                const tags = data.tags || ["#정책", "#MBTI"];
+                resultTags.innerHTML = tags.map(tag =>
                     `<span class="px-3 py-1.5 bg-white/20 rounded-full text-sm font-bold backdrop-blur-sm border border-white/10 shadow-sm flex items-center justify-center">${tag}</span>`
                 ).join('');
-                document.documentElement.style.setProperty('--aurora-point', data.color);
 
-                document.getElementById('export-title').innerText = data.title;
-                document.getElementById('export-type').innerText = data.type;
+                // 3. 색상 설정 (랜덤 또는 고정)
+                const color = MBTI_COLORS['default'];
+                document.documentElement.style.setProperty('--aurora-point', color);
 
-                // [수정: Flex 정렬 + Line-height 보정으로 완벽한 중앙 정렬 구현]
-                // line-height를 높이보다 살짝 작게 잡아 폰트 자체의 하단 여백을 상쇄
+                // 4. 이미지 내보내기용 바인딩
+                document.getElementById('export-title').innerText = resultTitle.innerText;
+                document.getElementById('export-type').innerText = resultType.innerText;
+
                 const exportTagsContainer = document.getElementById('export-tags');
-                exportTagsContainer.innerHTML = data.tags.map(tag =>
+                exportTagsContainer.innerHTML = tags.map(tag =>
                     `<span style="display: inline-block; height: 44px; line-height: 40px; padding: 0 24px; background: rgba(255,255,255,0.2); border-radius: 50px; color: white; font-weight: bold; font-size: 16px; border: 1px solid rgba(255,255,255,0.1); text-align: center; vertical-align: middle;">${tag}</span>`
                 ).join('');
+
+                // 5. 이미지 (1순위 장르 기반 랜덤 이미지)
+                // category_code가 있으면 해당 장르의 1~5번 이미지 중 랜덤 선택
+                const catCode = data.category_code || "welfare";
+                const imgNum = Math.floor(Math.random() * 5) + 1;
+                const imgPath = `/static/images/card_images/${catCode}_${imgNum}.webp`;
+
+                const resultImg = document.getElementById('result-img');
+                const exportImg = document.getElementById('export-img');
+
+                if (resultImg) resultImg.src = imgPath;
+                if (exportImg) exportImg.src = imgPath;
             }
 
             window.openMbtiModal = function () {
+                // [Check] 데이터가 있는지 확인
+                if (!window.userMbtiData) {
+                    alert("아직 분석할 데이터가 부족해요! 🥲\n더 많은 정책을 '찜'❤️ 해보세요.");
+                    return;
+                }
+
                 mbtiModal.classList.remove('hidden');
                 mbtiLoading.classList.remove('hidden');
                 mbtiResult.classList.add('hidden');
                 mbtiResult.classList.remove('result-card-enter');
+
                 initLoadingLottie();
                 if (loadingAnimation) loadingAnimation.play();
 
                 typeWriter("두구두구....", loadingText, 150);
-                setMbtiResult(CURRENT_RESULT_KEY);
+
+                // 데이터 세팅
+                setMbtiResult(window.userMbtiData);
 
                 setTimeout(() => { typeWriter("분석 완료!", loadingText, 100); }, 2000);
                 setTimeout(() => {
@@ -585,6 +650,109 @@
             initLoadingLottie();
         });
     </script>
+
+    <!-- Avatar Selection Modal -->
+    <div id="avatar-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-opacity opacity-0 pointer-events-none">
+        <div
+            class="bg-white rounded-[32px] w-full max-w-sm p-8 relative mx-4 shadow-2xl transform scale-95 transition-transform">
+            <button id="close-avatar-modal"
+                class="absolute top-6 right-6 text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="text-center mb-8">
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">프로필 캐릭터 선택</h3>
+                <p class="text-gray-500 text-sm">나를 가장 잘 표현하는 캐릭터를 골라보세요!</p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-4 mb-8">
+                <button
+                    class="avatar-option w-full aspect-square rounded-2xl border-2 border-transparent hover:border-orange-200 hover:bg-orange-50 transition-all relative overflow-hidden group p-1"
+                    data-icon="avatar_1">
+                    <img src="/static/images/avatars/avatar_1.png"
+                        class="w-full h-full object-cover rounded-xl transform group-hover:scale-110 transition-transform duration-300">
+                    <div
+                        class="active-indicator absolute inset-0 border-[3px] border-primary-orange rounded-2xl hidden items-center justify-center bg-black bg-opacity-10 z-10">
+                        <div
+                            class="w-6 h-6 bg-primary-orange rounded-full flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                </button>
+                <button
+                    class="avatar-option w-full aspect-square rounded-2xl border-2 border-transparent hover:border-orange-200 hover:bg-orange-50 transition-all relative overflow-hidden group p-1"
+                    data-icon="avatar_2">
+                    <img src="/static/images/avatars/avatar_2.png"
+                        class="w-full h-full object-cover rounded-xl transform group-hover:scale-110 transition-transform duration-300">
+                    <div
+                        class="active-indicator absolute inset-0 border-[3px] border-primary-orange rounded-2xl hidden items-center justify-center bg-black bg-opacity-10 z-10">
+                        <div
+                            class="w-6 h-6 bg-primary-orange rounded-full flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                </button>
+                <button
+                    class="avatar-option w-full aspect-square rounded-2xl border-2 border-transparent hover:border-orange-200 hover:bg-orange-50 transition-all relative overflow-hidden group p-1"
+                    data-icon="avatar_3">
+                    <img src="/static/images/avatars/avatar_3.png"
+                        class="w-full h-full object-cover rounded-xl transform group-hover:scale-110 transition-transform duration-300">
+                    <div
+                        class="active-indicator absolute inset-0 border-[3px] border-primary-orange rounded-2xl hidden items-center justify-center bg-black bg-opacity-10 z-10">
+                        <div
+                            class="w-6 h-6 bg-primary-orange rounded-full flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                </button>
+                <button
+                    class="avatar-option w-full aspect-square rounded-2xl border-2 border-transparent hover:border-orange-200 hover:bg-orange-50 transition-all relative overflow-hidden group p-1"
+                    data-icon="avatar_4">
+                    <img src="/static/images/avatars/avatar_4.png"
+                        class="w-full h-full object-cover rounded-xl transform group-hover:scale-110 transition-transform duration-300">
+                    <div
+                        class="active-indicator absolute inset-0 border-[3px] border-primary-orange rounded-2xl hidden items-center justify-center bg-black bg-opacity-10 z-10">
+                        <div
+                            class="w-6 h-6 bg-primary-orange rounded-full flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                </button>
+                <button
+                    class="avatar-option w-full aspect-square rounded-2xl border-2 border-transparent hover:border-orange-200 hover:bg-orange-50 transition-all relative overflow-hidden group p-1"
+                    data-icon="avatar_5">
+                    <img src="/static/images/avatars/avatar_5.png"
+                        class="w-full h-full object-cover rounded-xl transform group-hover:scale-110 transition-transform duration-300">
+                    <div
+                        class="active-indicator absolute inset-0 border-[3px] border-primary-orange rounded-2xl hidden items-center justify-center bg-black bg-opacity-10 z-10">
+                        <div
+                            class="w-6 h-6 bg-primary-orange rounded-full flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                </button>
+                <button
+                    class="avatar-option w-full aspect-square rounded-2xl border-2 border-transparent hover:border-orange-200 hover:bg-orange-50 transition-all relative overflow-hidden group p-1"
+                    data-icon="avatar_6">
+                    <img src="/static/images/avatars/avatar_6.png"
+                        class="w-full h-full object-cover rounded-xl transform group-hover:scale-110 transition-transform duration-300">
+                    <div
+                        class="active-indicator absolute inset-0 border-[3px] border-primary-orange rounded-2xl hidden items-center justify-center bg-black bg-opacity-10 z-10">
+                        <div
+                            class="w-6 h-6 bg-primary-orange rounded-full flex items-center justify-center text-white text-xs">
+                            <i class="fa-solid fa-check"></i>
+                        </div>
+                    </div>
+                </button>
+            </div>
+
+            <button id="save-avatar-btn"
+                class="w-full bg-gray-900 text-white py-4 rounded-2xl font-bold hover:bg-primary-orange hover:shadow-lg transition-all transform active:scale-95">
+                캐릭터 변경하기
+            </button>
+        </div>
+    </div>
 
     <!-- policy-modal -->
 

@@ -36,6 +36,10 @@ class User(Base):
 
     # [NEW] 유료 멤버십 등급 (free / premium)
     subscription_level = Column(String, default="free")
+    
+    # [NEW] 프로필 아이콘 (avatar_1 ~ avatar_6)
+    profile_icon = Column(String, default="avatar_1")
+
     # [NEW] 관계 설정 (유저가 지워지면 행동 로그도 지워짐)
     actions = relationship("UserAction", back_populates="user", cascade="all, delete")
 
