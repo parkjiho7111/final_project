@@ -593,24 +593,18 @@ async function checkLoginState() {
     const userEmail = localStorage.getItem('userEmail');
 
     if (isLoggedIn && userEmail) {
+        // [FIX] nav.html의 자체 스크립트가 UI를 제어하므로, 여기서 강제 innerHTML 주입을 하지 않습니다.
+        // 기존 코드가 nav.html의 변경사항(로그아웃 버튼 등)을 덮어쓰는 문제를 해결했습니다.
+        /*
         const pcNavList = document.getElementById('pc-nav-list');
         if (pcNavList) {
-            pcNavList.innerHTML = `
-                <li><a href="/main.html" class="flex items-center justify-center rounded-full px-4 py-2 text-[15px] font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all">Home</a></li>
-                <li><a href="/all.html" class="flex items-center justify-center rounded-full px-4 py-2 text-[15px] font-bold text-white bg-primary-teal shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:bg-[#3d8b94] transition-all">All Policies</a></li>
-                <li><a href="/about.html" class="flex items-center justify-center rounded-full px-4 py-2 text-[15px] font-bold text-white bg-primary-beige shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:bg-[#c49f5b] transition-all">About</a></li>
-                <li><a href="/mypage.html" class="flex items-center justify-center rounded-full px-4 py-2 text-[15px] font-bold text-white bg-primary-orange shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:bg-[#e06d2e] transition-all">My Page</a></li>
-                <li><button onclick="handleLogout()" class="flex items-center justify-center rounded-full px-4 py-2 text-[15px] font-bold text-gray-500 border border-gray-300 hover:bg-gray-50 transition-all cursor-pointer">Logout</button></li>
-            `;
+            pcNavList.innerHTML = `...`;
         }
         const mobileProfile = document.getElementById('mobile-profile-section');
         if (mobileProfile) {
-            mobileProfile.innerHTML = `
-                <p class="text-gray-600 mb-2">반가워요 👋</p>
-                <p class="text-xl font-bold text-gray-800 mb-4 truncate">${userEmail}님</p>
-                <a href="/mypage.html" class="block w-full text-center rounded-xl bg-primary-orange py-3 text-white font-bold shadow-md transition-transform active:scale-95">My Page</a>
-            `;
+            mobileProfile.innerHTML = `...`;
         }
+        */
         const mobileLogout = document.getElementById('mobile-logout-area');
         if (mobileLogout) mobileLogout.classList.remove('hidden');
 
