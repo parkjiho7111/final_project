@@ -16,6 +16,71 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
 const tinderData = window.tinderData || [];
 const allSlideData = window.allSlideData || [];
 
+// [NEW] 사용자 프로필 및 활동 지수 로드 함수 (전역 등록 for 실시간 연동)
+window.loadUserProfile = function () {
+    const userEmail = localStorage.getItem('userEmail');
+    if (!userEmail) return;
+
+    fetch(`/api/mypage/profile?user_email=${userEmail}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.error) {
+                console.error(data.error);
+                return;
+            }
+
+            // 1) 이름 & 이메일
+            const nameEl = document.getElementById('user-profile-name');
+            const emailEl = document.getElementById('user-profile-email');
+            if (nameEl) nameEl.innerText = `${data.name} 님 👋`;
+            if (emailEl) emailEl.innerText = data.email;
+
+            // 2) 뱃지
+            const badgesEl = document.getElementById('user-profile-badges');
+            if (badgesEl) {
+                let html = '';
+                if (data.region_badge) {
+                    html += `<span class="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg">${data.region_badge}</span>`;
+                }
+                if (data.level_badge) {
+                    html += `<span class="px-3 py-1 bg-orange-100 text-primary-orange text-xs font-bold rounded-lg">${data.level_badge}</span>`;
+                }
+                badgesEl.innerHTML = html;
+            }
+
+            // 3) 활동 지수
+            const scoreTextEl = document.getElementById('activity-score-text');
+            const progressBarEl = document.getElementById('activity-progress-bar');
+
+            if (scoreTextEl) {
+                scoreTextEl.innerHTML = `${data.activity_index}% <span class="text-sm font-normal text-gray-500">${data.level_badge}</span>`;
+            }
+            if (progressBarEl) {
+                const width = Math.min(data.activity_index, 100);
+                progressBarEl.style.width = `${width}%`;
+            }
+
+            // 4) 카운트
+            const likeCountEl = document.getElementById('user-like-count');
+            const applyCountEl = document.getElementById('user-apply-count');
+
+            if (likeCountEl) likeCountEl.innerText = data.like_count;
+            if (likeCountEl) likeCountEl.innerText = data.like_count;
+            if (applyCountEl) applyCountEl.innerText = data.apply_count;
+
+            // 5) 프로필 아이콘
+            const profileImg = document.getElementById('user-profile-img');
+            if (profileImg) {
+                // 직접 이미지 경로 설정
+                const iconName = data.profile_icon || "avatar_1";
+                profileImg.src = `/static/images/avatars/${iconName}.png`;
+            }
+        })
+        .catch(err => {
+            console.error("Profile Load Error:", err);
+        });
+};
+
 // [NEW] 카테고리별 색상 매핑 (all.html과 동일하게 유지)
 const GENRE_COLORS = {
     "취업": { main: "#4A9EA8", bg: "#F0FDFA" },
@@ -793,6 +858,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     mypageList.innerHTML = `<div class="empty-state"><p>데이터를 불러오는 중 오류가 발생했습니다.</p></div>`;
                 });
 
+            // [NEW] 1.5. 사용자 프로필 및 활동 지수 가져오기 (함수 호출로 대체)
+            if (typeof window.loadUserProfile === 'function') {
+                window.loadUserProfile();
+            }
+
             // 2. 차트 데이터 가져오기
 
             // 차트 업데이트 함수 (전역 등록)
@@ -834,7 +904,100 @@ document.addEventListener("DOMContentLoaded", () => {
             };
 
             // 최초 실행
+            // 최초 실행
             window.updateMyPageChart();
         }
     }
+
+    // --------------------------------------------------------
+    // [MODAL] Profile Avatar Selection
+    // --------------------------------------------------------
+    const avatarModal = document.getElementById('avatar-modal');
+    const btnEditProfile = document.getElementById('btn-edit-profile');
+    const btnCloseModal = document.getElementById('close-avatar-modal');
+    const btnSaveAvatar = document.getElementById('save-avatar-btn');
+    const avatarOptions = document.querySelectorAll('.avatar-option');
+
+    let selectedAvatar = null;
+
+    if (avatarModal && btnEditProfile) {
+        // Open Modal
+        btnEditProfile.addEventListener('click', () => {
+            avatarModal.classList.remove('hidden', 'pointer-events-none');
+            // Slight delay for animation
+            setTimeout(() => {
+                avatarModal.classList.remove('opacity-0');
+            }, 10);
+        });
+
+        // Close Modal
+        function closeAvatarModal() {
+            avatarModal.classList.add('opacity-0');
+            setTimeout(() => {
+                avatarModal.classList.add('hidden', 'pointer-events-none');
+            }, 300);
+        }
+
+        if (btnCloseModal) btnCloseModal.addEventListener('click', closeAvatarModal);
+
+        // Select logic
+        avatarOptions.forEach(opt => {
+            opt.addEventListener('click', () => {
+                // UI Reset
+                avatarOptions.forEach(o => {
+                    o.classList.remove('ring-4', 'ring-orange-200', 'bg-orange-50');
+                    const indicator = o.querySelector('.active-indicator');
+                    if (indicator) {
+                        indicator.classList.add('hidden');
+                        indicator.classList.remove('flex');
+                    }
+                });
+
+                // Active State
+                opt.classList.add('ring-4', 'ring-orange-200', 'bg-orange-50');
+                const activeIndicator = opt.querySelector('.active-indicator');
+                if (activeIndicator) {
+                    activeIndicator.classList.remove('hidden');
+                    activeIndicator.classList.add('flex');
+                }
+
+                selectedAvatar = opt.getAttribute('data-icon');
+            });
+        });
+
+        // Save Logic
+        if (btnSaveAvatar) {
+            btnSaveAvatar.addEventListener('click', () => {
+                if (!selectedAvatar) {
+                    alert('캐릭터를 선택해주세요!');
+                    return;
+                }
+
+                const userEmail = localStorage.getItem('userEmail');
+                if (!userEmail) return;
+
+                fetch('/api/mypage/profile/icon', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_email: userEmail,
+                        icon_name: selectedAvatar
+                    })
+                })
+                    .then(res => {
+                        if (res.ok) {
+                            closeAvatarModal();
+                            // Refresh Profile
+                            if (typeof window.loadUserProfile === 'function') {
+                                window.loadUserProfile();
+                            }
+                        } else {
+                            alert('저장에 실패했습니다.');
+                        }
+                    })
+                    .catch(err => console.error(err));
+            });
+        }
+    }
+
 });

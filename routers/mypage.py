@@ -6,7 +6,7 @@ from typing import List, Optional
 import os
 
 from database import get_db
-from models import UserAction, Policy, categoryColorMap, get_image_for_category, FRONT_TO_DB_CATEGORY
+from models import UserAction, Policy, User, categoryColorMap, get_image_for_category, FRONT_TO_DB_CATEGORY, normalize_region_name
 
 # 라우터 설정 (태그 및 프리픽스 설정)
 router = APIRouter(prefix="/api/mypage", tags=["mypage"])
@@ -33,7 +33,85 @@ class StatsDto(BaseModel):
     labels: List[str]
     data: List[int]
 
+class IconUpdate(BaseModel):
+    user_email: str
+    icon_name: str
+
 # ==================== [API 엔드포인트] ====================
+
+# 4. 사용자 프로필 및 활동 지수 조회 (우선 배치)
+@router.get("/profile")
+def get_user_profile(user_email: str, db: Session = Depends(get_db)):
+    """
+    사용자 기본 정보(이름, 이메일, 지역)와 활동 지수(레벨, 뱃지)를 반환합니다.
+    """
+    # 1. 유저 정보 조회
+    user = db.query(User).filter(User.email == user_email).first()
+    
+    if not user:
+        # 유저가 없으면 에러보다는 기본값 반환 (로그인 세션 문제일 수 있음)
+        return {"error": "User not found", "name": "알 수 없음", "region": "지역 미설정"}
+
+    # 2. 활동 지수 계산 분모: 해당 지역 정책 개수
+    user_region = user.region or "전국"
+    search_region = normalize_region_name(user_region)
+    
+    # 지역 정책 개수
+    if search_region == "전국":
+        total_policies = db.query(Policy).count()
+    else:
+        from sqlalchemy import or_
+        total_policies = db.query(Policy).filter(
+            or_(Policy.region.like(f"%{search_region}%"), Policy.region == "전국")
+        ).count()
+        
+    if total_policies == 0:
+        total_policies = 1
+
+    # 3. 활동 지수 계산 분자: 내가 찜한 활동 개수
+    like_count = db.query(UserAction).filter(
+        UserAction.user_email == user_email, 
+        UserAction.type == 'like'
+    ).count()
+
+    # 4. 퍼센트 계산
+    percentage = int((like_count / total_policies) * 100)
+    
+    # 5. 레벨 및 칭호 부여
+    level_badge = "#정책_기웃러 👀"
+    if percentage >= 100:
+        level_badge = "#정책_오지라퍼 🗣️📢"
+    elif percentage >= 61:
+        level_badge = "#인간_정책백과 📖"
+    elif percentage >= 31:
+        level_badge = "#지원금_사냥꾼 🏹"
+    elif percentage >= 11:
+        level_badge = "#혜택_줍줍러 🍬"
+        
+    return {
+        "name": user.name,
+        "email": user.email,
+        "region": user_region,
+        "region_badge": f"#{user_region}",
+        "activity_index": percentage,
+        "level_badge": level_badge,
+        "like_count": like_count,
+        "like_count": like_count,
+        "apply_count": 0,
+        "profile_icon": user.profile_icon or "avatar_1" # [NEW]
+    }
+
+# 5. 프로필 아이콘 변경
+@router.put("/profile/icon")
+def update_profile_icon(data: IconUpdate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.user_email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.profile_icon = data.icon_name
+    db.commit()
+    
+    return {"message": "Profile icon updated", "icon": user.profile_icon}
 
 # 1. 사용자 액션 저장 (좋아요/패스/좋아요 취소)
 @router.post("/action")
