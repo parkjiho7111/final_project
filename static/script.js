@@ -75,6 +75,16 @@ window.loadUserProfile = function () {
                 const iconName = data.profile_icon || "avatar_1";
                 profileImg.src = `/static/images/avatars/${iconName}.png`;
             }
+
+            // [NEW] MBTI 데이터 저장 (전역 변수 활용)
+            if (data.mbti) {
+                window.userMbtiData = data.mbti;
+                // 마이페이지 MBTI 카드의 텍스트 업데이트 (선택 사항)
+                const mbtiCardTitle = document.querySelector('#mbti-card-title'); // id 필요 시 html 수정
+                if (mbtiCardTitle) mbtiCardTitle.innerText = data.mbti.type_name;
+            } else {
+                window.userMbtiData = null;
+            }
         })
         .catch(err => {
             console.error("Profile Load Error:", err);

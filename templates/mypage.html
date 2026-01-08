@@ -479,16 +479,18 @@
         document.addEventListener("DOMContentLoaded", () => {
             if (window.playHeaderAnimation) setTimeout(() => { window.playHeaderAnimation(); }, 100);
 
-            const MBTI_TYPES = {
-                'edu': { title: '🎓 끊임없이 성장하는 지식 탐험가', type: '교육/자격증', color: '#4A9EA8', tags: ['#자기개발', '#자격증취득', '#평생학습'] },
-                'housing': { title: '🏡 로망을 실현하는 공간 설계자', type: '주거/자립', color: '#F48245', tags: ['#독립생활', '#주거안정', '#내집마련'] },
-                'finance': { title: '💰 빈틈없이 계획하는 자산 전략가', type: '금융/생활비', color: '#D9B36C', tags: ['#목돈마련', '#재테크', '#합리적소비'] },
-                'welfare': { title: '🍀 일상을 즐기는 낭만 수집가', type: '복지/문화', color: '#614AA8', tags: ['#워라밸', '#문화생활', '#심리안정'] },
-                'job': { title: '💼 비전을 좇는 열정 개척자', type: '취업/직무', color: '#6CD984', tags: ['#커리어성장', '#직무전문성', '#도전'] },
-                'startup': { title: '🚀 세상을 바꾸는 혁신 리더', type: '창업/사업', color: '#FF4343', tags: ['#창업도전', '#혁신아이디어', '#CEO'] }
+            // [NEW] MBTI 결과에 따른 색상/이미지 매핑 (백엔드 데이터 보완용)
+            // 텍스트 기반 매칭이 어려우므로 랜덤 또는 기본값 사용
+            // 추후 백엔드에서 category 코드를 내려주면 더 정확해짐
+            const MBTI_COLORS = {
+                'default': '#6CD984',
+                '취업': '#00C4B4',
+                '창업': '#FF6B6B',
+                '주거': '#F48245',
+                '금융': '#FFD166',
+                '교육': '#4D96FF',
+                '복지': '#FF9F43'
             };
-
-            const CURRENT_RESULT_KEY = 'job';
 
             const mbtiModal = document.getElementById('mbti-modal');
             const mbtiLoading = document.getElementById('mbti-loading');
@@ -498,6 +500,9 @@
             const resultTitle = document.getElementById('result-title');
             const resultType = document.getElementById('result-type');
             const resultTags = document.getElementById('result-tags');
+
+            // [NEW] 설명 텍스트 추가 (디자인에 없던 요소라 모달 하단이나 적절한 곳에 추가 고려)
+            // 현재는 콘솔에만 찍거나 태그 밑에 작게 추가
 
             let loadingAnimation = null;
 
@@ -524,38 +529,64 @@
                 type();
             }
 
-            function setMbtiResult(key) {
-                const data = MBTI_TYPES[key];
+            function setMbtiResult(data) {
                 if (!data) return;
 
-                resultTitle.innerText = data.title;
-                resultType.innerText = data.type;
-                resultTags.innerHTML = data.tags.map(tag =>
+                // 1. 데이터 바인딩
+                resultTitle.innerText = data.subtitle || "당신의 정책 성향은?";
+                resultType.innerText = data.type_name || "준비중";
+
+                // 2. 태그 바인딩
+                const tags = data.tags || ["#정책", "#MBTI"];
+                resultTags.innerHTML = tags.map(tag =>
                     `<span class="px-3 py-1.5 bg-white/20 rounded-full text-sm font-bold backdrop-blur-sm border border-white/10 shadow-sm flex items-center justify-center">${tag}</span>`
                 ).join('');
-                document.documentElement.style.setProperty('--aurora-point', data.color);
 
-                document.getElementById('export-title').innerText = data.title;
-                document.getElementById('export-type').innerText = data.type;
+                // 3. 색상 설정 (랜덤 또는 고정)
+                const color = MBTI_COLORS['default'];
+                document.documentElement.style.setProperty('--aurora-point', color);
 
-                // [수정: Flex 정렬 + Line-height 보정으로 완벽한 중앙 정렬 구현]
-                // line-height를 높이보다 살짝 작게 잡아 폰트 자체의 하단 여백을 상쇄
+                // 4. 이미지 내보내기용 바인딩
+                document.getElementById('export-title').innerText = resultTitle.innerText;
+                document.getElementById('export-type').innerText = resultType.innerText;
+
                 const exportTagsContainer = document.getElementById('export-tags');
-                exportTagsContainer.innerHTML = data.tags.map(tag =>
+                exportTagsContainer.innerHTML = tags.map(tag =>
                     `<span style="display: inline-block; height: 44px; line-height: 40px; padding: 0 24px; background: rgba(255,255,255,0.2); border-radius: 50px; color: white; font-weight: bold; font-size: 16px; border: 1px solid rgba(255,255,255,0.1); text-align: center; vertical-align: middle;">${tag}</span>`
                 ).join('');
+
+                // 5. 이미지 (1순위 장르 기반 랜덤 이미지)
+                // category_code가 있으면 해당 장르의 1~5번 이미지 중 랜덤 선택
+                const catCode = data.category_code || "welfare";
+                const imgNum = Math.floor(Math.random() * 5) + 1;
+                const imgPath = `/static/images/card_images/${catCode}_${imgNum}.webp`;
+
+                const resultImg = document.getElementById('result-img');
+                const exportImg = document.getElementById('export-img');
+
+                if (resultImg) resultImg.src = imgPath;
+                if (exportImg) exportImg.src = imgPath;
             }
 
             window.openMbtiModal = function () {
+                // [Check] 데이터가 있는지 확인
+                if (!window.userMbtiData) {
+                    alert("아직 분석할 데이터가 부족해요! 🥲\n더 많은 정책을 '찜'❤️ 해보세요.");
+                    return;
+                }
+
                 mbtiModal.classList.remove('hidden');
                 mbtiLoading.classList.remove('hidden');
                 mbtiResult.classList.add('hidden');
                 mbtiResult.classList.remove('result-card-enter');
+
                 initLoadingLottie();
                 if (loadingAnimation) loadingAnimation.play();
 
                 typeWriter("두구두구....", loadingText, 150);
-                setMbtiResult(CURRENT_RESULT_KEY);
+
+                // 데이터 세팅
+                setMbtiResult(window.userMbtiData);
 
                 setTimeout(() => { typeWriter("분석 완료!", loadingText, 100); }, 2000);
                 setTimeout(() => {
