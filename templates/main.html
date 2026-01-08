@@ -147,16 +147,26 @@
                     <div class="no-more-cards">모든 카드를 확인했습니다! 🎉</div>
                 </div>
                 <div id="swipe-guide"
-                    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none opacity-0 flex flex-col items-center justify-center gap-4">
+                    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-0 flex flex-col items-center justify-center
+                           bg-neutral-900/80 backdrop-blur-md px-12 py-10 rounded-[30px] border border-white/10 shadow-2xl transition-all">
 
-                    <div class="flex items-center justify-center drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)]">
-                        <i class="fa-solid fa-hand-pointer text-5xl text-white" id="hand-icon"></i>
+                    <!-- 아이콘 영역: 크기 확대 및 브랜드 컬러 적용 -->
+                    <div class="flex items-center justify-center mb-6">
+                        <i class="fa-solid fa-hand-pointer text-6xl text-primary-orange drop-shadow-md"
+                            id="hand-icon"></i>
                     </div>
 
-                    <div class="drop-shadow-[0_2px_4px_rgba(0,0,0,0.6)]">
-                        <p class="text-lg font-extrabold text-white whitespace-nowrap tracking-wide">
-                            왼쪽: 넘기기 👈&nbsp;|&nbsp; 👉 오른쪽: 찜 ❤️
+                    <!-- 텍스트 영역: 가독성 개선 -->
+                    <div class="text-center">
+                        <p class="text-xl font-bold text-white whitespace-nowrap tracking-wider mb-2">
+                            카드를 좌우로 밀어보세요
                         </p>
+                        <div class="flex items-center justify-center gap-4 text-gray-300 font-medium text-base">
+                            <span class="flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> PASS</span>
+                            <span class="w-[1px] h-4 bg-gray-600"></span>
+                            <span class="flex items-center gap-1 text-primary-red font-bold">LIKE <i
+                                    class="fa-solid fa-heart"></i></span>
+                        </div>
                     </div>
 
                 </div>
