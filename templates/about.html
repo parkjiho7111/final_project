@@ -42,105 +42,146 @@
 
 <body class="font-sans antialiased">
 
-    {% include 'nav.html' %}
+    <nav
+        class="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/70 backdrop-blur-md transition-all duration-300">
+        <div class="mx-auto flex h-[80px] max-w-[1200px] items-center justify-center md:justify-between px-5">
+
+            <a href="/" class="hidden md:flex items-center transition-opacity hover:opacity-80">
+                <img src="/static/images/team_logo.webp"
+                    onerror="this.src='https://placehold.co/100x40/transparent/333?text=LOGO'" alt="Logo"
+                    class="h-16 w-auto">
+            </a>
+
+            <ul class="flex gap-2 md:gap-3">
+                <li>
+                    <a href="/main.html"
+                        class="flex items-center justify-center rounded-full px-4 py-2 text-[14px] md:text-[15px] font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all">
+                        Home
+                    </a>
+                </li>
+                <li>
+                    <a href="/all.html"
+                        class="flex items-center justify-center rounded-full px-4 py-2 text-[14px] md:text-[15px] font-bold text-white bg-primary-teal shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:bg-[#3d8b94] transition-all">
+                        All Policies
+                    </a>
+                </li>
+                <li>
+                    <a href="/mypage.html"
+                        class="flex items-center justify-center rounded-full px-4 py-2 text-[14px] md:text-[15px] font-bold text-white bg-primary-orange shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:bg-[#e06d2e] transition-all">
+                        My Page
+                    </a>
+                </li>
+                <li>
+                    <a href="/about.html"
+                        class="flex items-center justify-center rounded-full px-4 py-2 text-[14px] md:text-[15px] font-bold text-white bg-primary-beige shadow-md hover:-translate-y-0.5 hover:shadow-lg hover:bg-[#c49f5b] transition-all">
+                        About
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
 
     <main class="body-container about-container">
         <section class="about-header">
             <h1 class="about-title">About us</h1>
 
             <div class="about-intro-wrapper">
-                <div class="video-placeholder">
-                    <div class="play-button">
-                        <i class="fa-solid fa-play"></i>
-                    </div>
-                </div>
-
-                <div class="contact-info">
-                    <h3>Contact</h3>
-                    <p class="contact-desc">
-                        청년들을 위한 정책 플랫폼, <br>
-                        우리는 청년의 내일을 응원합니다.
-                    </p>
-                    <div class="contact-details">
-                        <p><strong>Email:</strong> contact@mediafrontier.com</p>
-                        <p><strong>Project:</strong> Youth Policy Platform</p>
-                        <p class="highlight">미디어프론티어 2기 수강생 프로젝트</p>
-                    </div>
-                </div>
+                <iframe width="100%" height="100%"
+                    src="https://www.youtube.com/embed/aeLgp-goCAc?autoplay=1&mute=1&controls=0&loop=1&playlist=aeLgp-goCAc"
+                    title="YouTube video player" frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerpolicy="strict-origin-when-cross-origin" allowfullscreen style="aspect-ratio: 16 / 9;">
+                </iframe>
             </div>
         </section>
+    </main>
 
-        <section class="team-section">
-            <h2 class="section-title-left">Our Team</h2>
-            <div class="team-grid">
-                <div class="team-card">
-                    <div class="team-img">
-                        <img src="/static/images/Team_01.png"
-                            onerror="this.src='[https://placehold.co/200x200/png?text=Team+01](https://placehold.co/200x200/png?text=Team+01)'"
-                            alt="Member 1">
-                    </div>
-                    <div class="team-info">
-                        <h3>Da-in J.</h3>
-                        <p>Project Manager</p>
-                    </div>
+    <div class="contact-info">
+        <h3>Contact</h3>
+        <p class="contact-desc">
+            청년들을 위한 정책 플랫폼, <br>
+            우리는 청년의 내일을 응원합니다.
+        </p>
+        <div class="contact-details">
+            <p><strong>Email:</strong> dayin.9905@gmail.com</p>
+            <p><strong>Project:</strong> Youth Policy Platform</p>
+            <p class="highlight">미디어프론티어 2기 수강생 프로젝트</p>
+        </div>
+    </div>
+    </div>
+    </section>
+
+    <section class="team-section">
+        <h2 class="section-title-left">Our Team</h2>
+        <div class="team-grid">
+            <div class="team-card">
+                <div class="team-img">
+                    <img src="/static/images/Team_01.png"
+                        onerror="this.src='[https://placehold.co/200x200/png?text=Team+01](https://placehold.co/200x200/png?text=Team+01)'"
+                        alt="Member 1">
                 </div>
-                <div class="team-card">
-                    <div class="team-img">
-                        <img src="/static/images/Team_02.png"
-                            onerror="this.src='[https://placehold.co/200x200/png?text=Team+02](https://placehold.co/200x200/png?text=Team+02)'"
-                            alt="Member 2">
-                    </div>
-                    <div class="team-info">
-                        <h3>Younghu P.</h3>
-                        <p>Backend Developer</p>
-                    </div>
-                </div>
-                <div class="team-card">
-                    <div class="team-img">
-                        <img src="/static/images/Team_03.png"
-                            onerror="this.src='[https://placehold.co/200x200/png?text=Team+03](https://placehold.co/200x200/png?text=Team+03)'"
-                            alt="Member 3">
-                    </div>
-                    <div class="team-info">
-                        <h3>Hwang-wook O.</h3>
-                        <p>Project Planner</p>
-                    </div>
-                </div>
-                <div class="team-card">
-                    <div class="team-img">
-                        <img src="/static/images/Team_04.png"
-                            onerror="this.src='[https://placehold.co/200x200/png?text=Team+04](https://placehold.co/200x200/png?text=Team+04)'"
-                            alt="Member 4">
-                    </div>
-                    <div class="team-info">
-                        <h3>Jisang H.</h3>
-                        <p>UX/UI Designer & Frontend Developer</p>
-                    </div>
-                </div>
-                <div class="team-card">
-                    <div class="team-img">
-                        <img src="/static/images/Team_05.png"
-                            onerror="this.src='[https://placehold.co/200x200/png?text=Team+05](https://placehold.co/200x200/png?text=Team+05)'"
-                            alt="Member 5">
-                    </div>
-                    <div class="team-info">
-                        <h3>Jiho P.</h3>
-                        <p>Assistant Developer</p>
-                    </div>
-                </div>
-                <div class="team-card">
-                    <div class="team-img">
-                        <img src="/static/images/Team_06.png"
-                            onerror="this.src='[https://placehold.co/200x200/png?text=Team+06](https://placehold.co/200x200/png?text=Team+06)'"
-                            alt="Member 6">
-                    </div>
-                    <div class="team-info">
-                        <h3>Suhyun O.</h3>
-                        <p>Content Designer</p>
-                    </div>
+                <div class="team-info">
+                    <h3>Da-in J.</h3>
+                    <p>Project Manager</p>
                 </div>
             </div>
-        </section>
+            <div class="team-card">
+                <div class="team-img">
+                    <img src="/static/images/Team_02.png"
+                        onerror="this.src='[https://placehold.co/200x200/png?text=Team+02](https://placehold.co/200x200/png?text=Team+02)'"
+                        alt="Member 2">
+                </div>
+                <div class="team-info">
+                    <h3>Younghu P.</h3>
+                    <p>Backend Developer / 영상 제작</p>
+                </div>
+            </div>
+            <div class="team-card">
+                <div class="team-img">
+                    <img src="/static/images/Team_03.png"
+                        onerror="this.src='[https://placehold.co/200x200/png?text=Team+03](https://placehold.co/200x200/png?text=Team+03)'"
+                        alt="Member 3">
+                </div>
+                <div class="team-info">
+                    <h3>Hwang-wook O.</h3>
+                    <p>Project Planner</p>
+                </div>
+            </div>
+            <div class="team-card">
+                <div class="team-img">
+                    <img src="/static/images/Team_04.png"
+                        onerror="this.src='[https://placehold.co/200x200/png?text=Team+04](https://placehold.co/200x200/png?text=Team+04)'"
+                        alt="Member 4">
+                </div>
+                <div class="team-info">
+                    <h3>Jisang H.</h3>
+                    <p>UX/UI Designer & Frontend Developer</p>
+                </div>
+            </div>
+            <div class="team-card">
+                <div class="team-img">
+                    <img src="/static/images/Team_05.png"
+                        onerror="this.src='[https://placehold.co/200x200/png?text=Team+05](https://placehold.co/200x200/png?text=Team+05)'"
+                        alt="Member 5">
+                </div>
+                <div class="team-info">
+                    <h3>Jiho P.</h3>
+                    <p>Assistant Developer</p>
+                </div>
+            </div>
+            <div class="team-card">
+                <div class="team-img">
+                    <img src="/static/images/Team_06.png"
+                        onerror="this.src='[https://placehold.co/200x200/png?text=Team+06](https://placehold.co/200x200/png?text=Team+06)'"
+                        alt="Member 6">
+                </div>
+                <div class="team-info">
+                    <h3>Suhyun O.</h3>
+                    <p>Content Designer</p>
+                </div>
+            </div>
+        </div>
+    </section>
     </main>
 
     <div class="footer-section">
