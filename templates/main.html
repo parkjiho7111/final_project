@@ -35,7 +35,7 @@
             top: 40% !important;
             transform: translate(-50%, -50%) !important;
         }
-        
+
         .mypage-link-btn {
             padding: 8px 16px;
             background-color: #F48245;
@@ -53,17 +53,17 @@
             min-width: 200px;
             width: 200px;
         }
-        
+
         .mypage-link-btn:hover {
             background-color: #ffa366;
             border-color: #ffa366;
         }
-        
+
         .mypage-link-btn span {
             display: inline-flex;
             align-items: center;
         }
-        
+
         .load-more-cards-btn {
             padding: 8px 16px;
             background-color: #4A9EA8;
@@ -81,12 +81,12 @@
             min-width: 200px;
             width: 200px;
         }
-        
+
         .load-more-cards-btn:hover {
             background-color: #6bb5c0;
             border-color: #6bb5c0;
         }
-        
+
         .load-more-cards-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -118,8 +118,8 @@
         .header-image-container {
             width: 100%;
             aspect-ratio: 16 / 9;
-            min-height: 300px;
-            max-height: 400px;
+            min-height: 400px;
+            max-height: 600px;
             position: relative;
             background-color: #f9fafb;
             border-radius: 20px;
@@ -167,11 +167,11 @@
     {% include "nav.html" %}
     <main class="relative body-container mypage-container max-w-[1200px] mx-auto px-5 py-10">
         <section class="header-section">
-            <div class="w-full flex flex-col md:flex-row items-center justify-between gap-6 lg:gap-10 mb-12 pt-4">
+            <div class="w-full flex flex-col md:flex-row items-center justify-between gap-6 lg:gap-10 mb-8">
 
                 <div class="w-full md:w-[45%] text-center md:text-left order-1 shrink-0 px-3 py-1 header-text">
                     <h1 class="text-4xl md:text-5xl font-extrabold text-gray-900 leading-tight mb-6">
-                        나의 정책을<br>한눈에 모아보세요
+                        &nbsp;<br>&nbsp;
                     </h1>
                     <p class="text-gray-500 text-lg leading-relaxed break-keep">
                         &nbsp;<br>&nbsp;
@@ -195,15 +195,15 @@
             </div>
 
             <div class="dvline">
-                <span class="dv-item">Solid Foundation</span><span class="dv-item pink-bullet">Since 2024</span><span
-                    class="dv-item pink-bullet">Smart, Reliable</span><span
-                    class="dv-item pink-bullet long-text">Connecting policies to your daily life</span>
+                <span class="dv-item pink-bullet">Smart Matching</span><span class="dv-item pink-bullet">Since
+                    2025</span><span class="dv-item pink-bullet">Accessible, Reliable</span><span
+                    class="dv-item pink-bullet long-text">Your Everyday Policy Mate</span>
             </div>
         </section>
 
         <section class="tinder-section">
             <div class="section-title">
-                <h2>지금 주목해야 할 정책 🔥</h2>
+                <h2>지금 주목해야 할 정책</h2>
                 <p>카드를 좌우로 넘겨보세요 (스와이프)</p>
             </div>
             <div class="swiper-container">
@@ -212,23 +212,24 @@
                 </div>
                 <div id="swipe-guide"
                     class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-0 flex flex-col items-center justify-center
-                           bg-neutral-900/80 backdrop-blur-md px-12 py-10 rounded-[30px] border border-white/10 shadow-2xl transition-all">
+                           bg-[#9a9a9a]/60 backdrop-blur-md px-12 py-10 rounded-[30px] border border-white/10 shadow-2xl transition-all">
 
                     <!-- 아이콘 영역: 크기 확대 및 브랜드 컬러 적용 -->
                     <div class="flex items-center justify-center mb-6">
-                        <i class="fa-solid fa-hand-pointer text-6xl text-primary-orange drop-shadow-md"
-                            id="hand-icon"></i>
+                        <i class="fa-solid fa-hand-pointer text-6xl text-[#f8f8f8] drop-shadow-md" id="hand-icon"></i>
                     </div>
 
                     <!-- 텍스트 영역: 가독성 개선 -->
                     <div class="text-center">
-                        <p class="text-xl font-bold text-white whitespace-nowrap tracking-wider mb-2">
+                        <p class="text-xl font-bold text-white whitespace-nowrap tracking-wider mb-2 drop-shadow-md">
                             카드를 좌우로 밀어보세요
                         </p>
-                        <div class="flex items-center justify-center gap-4 text-gray-300 font-medium text-base">
-                            <span class="flex items-center gap-1"><i class="fa-solid fa-arrow-left"></i> PASS</span>
+                        <div
+                            class="flex items-center justify-center gap-4 text-[#333333] font-medium text-base drop-shadow-sm">
+                            <span class="flex items-center gap-1 font-bold"><i class="fa-solid fa-arrow-left"></i>
+                                PASS</span>
                             <span class="w-[1px] h-4 bg-gray-600"></span>
-                            <span class="flex items-center gap-1 text-primary-red font-bold">LIKE <i
+                            <span class="flex items-center gap-1 text-[#ff5a5f] font-bold">LIKE <i
                                     class="fa-solid fa-heart"></i></span>
                         </div>
                     </div>
@@ -291,7 +292,7 @@
 
         <section class="slide-section">
             <div class="section-header">
-                <h3 id="result-message">추천 정책 (30건)</h3>
+                <h3 id="result-message">추천 정책 (20건)</h3>
             </div>
             <div class="relative marquee-wrapper">
                 <div
@@ -395,9 +396,9 @@
                 if (element.querySelector('.mypage-link-btn') || element.querySelector('.load-more-cards-btn')) {
                     return;
                 }
-                
+
                 // 위치 조정만 하고 기존 메시지는 유지 (CSS에서 이미 설정됨)
-                
+
                 // 기존 내용을 유지하면서 버튼만 추가
                 const existingText = element.textContent || element.innerText;
                 // 이모티콘 제거 (🎉)
@@ -414,7 +415,7 @@
                     </button>
                 `;
             }
-            
+
             // MutationObserver로 .no-more-cards 요소 감지
             const tinderList = document.getElementById('tinder-list');
             if (tinderList) {
@@ -424,13 +425,13 @@
                         updateNoMoreCardsElement(noMoreCards);
                     }
                 });
-                
+
                 // 관찰 시작
-                observer.observe(tinderList, { 
-                    childList: true, 
-                    subtree: true 
+                observer.observe(tinderList, {
+                    childList: true,
+                    subtree: true
                 });
-                
+
                 // 초기 체크 (이미 존재하는 경우)
                 setTimeout(() => {
                     const existing = document.querySelector('.no-more-cards');
@@ -444,7 +445,7 @@
 </body>
 
 </html>
-
+<script src="/static/script.js"></script>
 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -486,11 +487,11 @@
         // [데이터 교체] 지역에 맞는 텍스트로 변경
         if (regionId && REGION_NAMES[regionId]) {
             const regionName = REGION_NAMES[regionId];
-            if (headerTitle) headerTitle.innerHTML = `<span class="text-primary-teal">${regionName}</span>의<br>청년 정책 소식 📰`;
+            if (headerTitle) headerTitle.innerHTML = `<span class="text-primary-teal">${regionName}</span>의<br>청년 정책 소식`;
             if (headerDesc) headerDesc.innerHTML = `${regionName} 청년들을 위한 맞춤 정책을 모았습니다.<br>지금 바로 확인해보세요!`;
             if (searchInput) searchInput.value = `#${regionName} #취업 #주거`;
         } else {
-            if (headerTitle) headerTitle.innerHTML = `쓱-쓱 훑어보는<br>청년 정책 소식 📰`;
+            if (headerTitle) headerTitle.innerHTML = `쓱-쓱 훑어보는<br>청년 정책 소식`;
             if (headerDesc) headerDesc.innerHTML = `나에게 딱 맞는 정책을 쉽고 빠르게 찾아보세요.<br>매일 업데이트되는 새로운 소식을 놓치지 마세요!`;
         }
 
@@ -529,7 +530,11 @@
 
 <script src="/static/policy_modal.js"></script>
 
+<!-- auth-modal -->
 
+{% with btn_class="bg-[#FF5A5F] hover:bg-[#e04a4f]" %}
+{% include "components/auth_modal.html" %}
+{% endwith %}
 
 <script>
     // 회원가입 버튼 상태 업데이트 함수
@@ -590,180 +595,219 @@
 </script>
 
 <script>
-    // 정책 모달 열릴 때 배경 마키 애니메이션 속도 제어
+    // [GSAP 기반] 마키 슬라이드 애니메이션 (CSS 애니메이션 대체)
     document.addEventListener("DOMContentLoaded", () => {
+        const row1 = document.getElementById('slide-row-1');
+        const row2 = document.getElementById('slide-row-2');
         const modal = document.getElementById('policy-modal');
-        const slideRow1 = document.getElementById('slide-row-1');
-        const slideRow2 = document.getElementById('slide-row-2');
 
-        if (!modal || !slideRow1 || !slideRow2) return;
+        if (!row1 || !row2) return;
 
-        // 원래 애니메이션 속도 저장
-        const originalSpeed1 = '40s'; // scroll-left
-        const originalSpeed2 = '45s'; // scroll-right
-        const slowSpeed1 = '80s'; // 2배 느리게
-        const slowSpeed2 = '90s'; // 2배 느리게
-
-        // 마키 애니메이션 속도 변경 함수
-        function setMarqueeSpeed(isSlow) {
-            if (isSlow) {
-                // 느리게
-                slideRow1.style.animationDuration = slowSpeed1;
-                slideRow2.style.animationDuration = slowSpeed2;
-            } else {
-                // 원래 속도로 복구
-                slideRow1.style.animationDuration = originalSpeed1;
-                slideRow2.style.animationDuration = originalSpeed2;
-            }
+        // GSAP 라이브러리 확인
+        if (typeof gsap === 'undefined') {
+            console.warn('GSAP 라이브러리가 로드되지 않았습니다. 마키 애니메이션이 작동하지 않을 수 있습니다.');
+            return;
         }
 
-        // 모달 상태 확인 함수
-        function checkModalState() {
-            const isOpen = modal.classList.contains('active') && !modal.classList.contains('hidden');
-            setMarqueeSpeed(isOpen);
-        }
+        // [핵심] 기존 CSS 애니메이션이 GSAP와 충돌하지 않도록 강제 종료
+        // style.css를 수정하지 않고 여기서 처리함으로서 사이드 이펙트 방지
+        row1.style.animation = 'none';
+        row2.style.animation = 'none';
 
-        // MutationObserver로 모달 클래스 변경 감지
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                    checkModalState();
+        // 1. 컨텐츠 복제 함수
+        let tween1, tween2;
+        let contentDuplicated = { row1: false, row2: false };
+
+        function duplicateContent(element, rowKey) {
+            // 이미 복제된 경우 스킵
+            if (contentDuplicated[rowKey]) return;
+
+            // 내용이 렌더링될 때까지 잠시 대기 후 복제
+            const checkContent = setInterval(() => {
+                if (element.children.length > 0) {
+                    clearInterval(checkContent);
+                    element.innerHTML += element.innerHTML;
+                    contentDuplicated[rowKey] = true;
+
+                    // 두 행 모두 복제 완료되면 애니메이션 시작
+                    if (contentDuplicated.row1 && contentDuplicated.row2) {
+                        startMarquee();
+                    }
                 }
+            }, 100);
+        }
+
+        // 2. GSAP 애니메이션 시작
+        function startMarquee() {
+            // 이미 시작된 경우 스킵
+            if (tween1 || tween2) return;
+
+            // row1: 왼쪽으로 이동 (-50% 방향)
+            tween1 = gsap.to(row1, {
+                xPercent: -50,
+                ease: "none",
+                duration: 60,
+                repeat: -1
             });
-        });
 
-        // 모달 요소 관찰 시작
-        observer.observe(modal, {
-            attributes: true,
-            attributeFilter: ['class']
-        });
+            // row2: 오른쪽으로 이동 (초기값 -50%에서 0%로)
+            gsap.set(row2, { xPercent: -50 });
+            tween2 = gsap.to(row2, {
+                xPercent: 0,
+                ease: "none",
+                duration: 65,
+                repeat: -1
+            });
+        }
 
-        // 초기 상태 확인
-        checkModalState();
+        // 컨텐츠 복제 시작
+        duplicateContent(row1, 'row1');
+        duplicateContent(row2, 'row2');
+
+        // 3. 모달 감지 및 속도 제어 (TimeScale)
+        if (modal) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        const isOpen = modal.classList.contains('active') && !modal.classList.contains('hidden');
+                        const targetScale = isOpen ? 0.1 : 1;
+                        const duration = isOpen ? 1.5 : 1;
+
+                        if (tween1) gsap.to(tween1, { timeScale: targetScale, duration: duration });
+                        if (tween2) gsap.to(tween2, { timeScale: targetScale, duration: duration });
+                    }
+                });
+            });
+
+            observer.observe(modal, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
     });
 </script>
 
-    <!-- [추가] 정책 카드 더보기 기능 -->
-    <script>
-        // loadMoreCards 함수 구현 (AJAX 방식)
-        async function loadMoreCards() {
-            // 1. 현재 카드 ID 수집
-            const currentIds = [];
-            if (window.tinderData && Array.isArray(window.tinderData)) {
-                window.tinderData.forEach(card => {
-                    if (card.id) currentIds.push(card.id.toString());
-                });
+<!-- [추가] 정책 카드 더보기 기능 -->
+<script>
+    // loadMoreCards 함수 구현 (AJAX 방식)
+    async function loadMoreCards() {
+        // 1. 현재 카드 ID 수집
+        const currentIds = [];
+        if (window.tinderData && Array.isArray(window.tinderData)) {
+            window.tinderData.forEach(card => {
+                if (card.id) currentIds.push(card.id.toString());
+            });
+        }
+
+        // 2. sessionStorage에서 기존 ID 가져오기
+        const storedIds = sessionStorage.getItem('seen_policy_ids');
+        let seenIds = storedIds ? storedIds.split(',') : [];
+
+        // 3. 중복 제거하여 합치기
+        const allSeenIds = [...new Set([...seenIds, ...currentIds])].filter(id => id);
+
+        // 4. sessionStorage에 저장
+        sessionStorage.setItem('seen_policy_ids', allSeenIds.join(','));
+
+        // 5. 버튼 상태 변경
+        const btn = document.querySelector('.load-more-cards-btn');
+        if (btn) {
+            btn.textContent = "새로운 정책 찾는 중...";
+            btn.disabled = true;
+        }
+
+        // 6. URL 파라미터 구성
+        const urlParams = new URLSearchParams();
+        urlParams.set('exclude_ids', allSeenIds.join(','));
+
+        // region 파라미터 추가
+        const currentUrlParams = new URLSearchParams(window.location.search);
+        let region = currentUrlParams.get('region');
+        if (!region) {
+            region = sessionStorage.getItem('sseuk_selected_region');
+        }
+        if (region) {
+            urlParams.set('region', region);
+        }
+
+        try {
+            // 7. AJAX로 새 데이터 가져오기
+            const response = await fetch(`/api/main/more-cards?${urlParams.toString()}`);
+            const data = await response.json();
+
+            // 8. 데이터가 없으면 alert 및 버튼 비활성화
+            if (!data.cards || data.cards.length === 0) {
+                alert("더 이상 정책이 없습니다.");
+                if (btn) {
+                    btn.textContent = "더 이상 카드가 없습니다";
+                    btn.disabled = true;
+                    btn.style.opacity = "0.5";
+                    btn.style.cursor = "not-allowed";
+                }
+                return;
             }
-            
-            // 2. sessionStorage에서 기존 ID 가져오기
-            const storedIds = sessionStorage.getItem('seen_policy_ids');
-            let seenIds = storedIds ? storedIds.split(',') : [];
-            
-            // 3. 중복 제거하여 합치기
-            const allSeenIds = [...new Set([...seenIds, ...currentIds])].filter(id => id);
-            
-            // 4. sessionStorage에 저장
-            sessionStorage.setItem('seen_policy_ids', allSeenIds.join(','));
-            
-            // 5. 버튼 상태 변경
-            const btn = document.querySelector('.load-more-cards-btn');
+
+            // 9. window.tinderData 업데이트
+            window.tinderData = data.cards;
+
+            // 10. #tinder-list 컨테이너 완전히 비우기
+            const tinderList = document.getElementById('tinder-list');
+            if (!tinderList) return;
+
+            tinderList.innerHTML = '';
+
+            // 11. .no-more-cards 요소 숨기기
+            const noMoreCards = document.querySelector('.no-more-cards');
+            if (noMoreCards) {
+                noMoreCards.remove();
+            }
+
+            // 12. 새로운 CardSwiper 인스턴스 생성 (script.js의 클래스 재사용)
+            // script.js가 이미 로드되어 있으므로 CardSwiper 클래스를 사용 가능
+            new CardSwiper(tinderList, window.tinderData);
+
+            // 13. 버튼 상태 복구
             if (btn) {
-                btn.textContent = "새로운 정책 찾는 중...";
-                btn.disabled = true;
+                btn.textContent = "정책 카드 더보기";
+                btn.disabled = false;
+                btn.style.opacity = "";
+                btn.style.cursor = "";
             }
-            
-            // 6. URL 파라미터 구성
-            const urlParams = new URLSearchParams();
-            urlParams.set('exclude_ids', allSeenIds.join(','));
-            
-            // region 파라미터 추가
-            const currentUrlParams = new URLSearchParams(window.location.search);
-            let region = currentUrlParams.get('region');
-            if (!region) {
-                region = sessionStorage.getItem('sseuk_selected_region');
-            }
-            if (region) {
-                urlParams.set('region', region);
-            }
-            
-            try {
-                // 7. AJAX로 새 데이터 가져오기
-                const response = await fetch(`/api/main/more-cards?${urlParams.toString()}`);
-                const data = await response.json();
-                
-                // 8. 데이터가 없으면 alert 및 버튼 비활성화
-                if (!data.cards || data.cards.length === 0) {
-                    alert("더 이상 정책이 없습니다.");
-                    if (btn) {
-                        btn.textContent = "더 이상 카드가 없습니다";
-                        btn.disabled = true;
-                        btn.style.opacity = "0.5";
-                        btn.style.cursor = "not-allowed";
-                    }
-                    return;
-                }
-                
-                // 9. window.tinderData 업데이트
-                window.tinderData = data.cards;
-                
-                // 10. #tinder-list 컨테이너 완전히 비우기
-                const tinderList = document.getElementById('tinder-list');
-                if (!tinderList) return;
-                
-                tinderList.innerHTML = '';
-                
-                // 11. .no-more-cards 요소 숨기기
-                const noMoreCards = document.querySelector('.no-more-cards');
-                if (noMoreCards) {
-                    noMoreCards.remove();
-                }
-                
-                // 12. 새로운 CardSwiper 인스턴스 생성 (script.js의 클래스 재사용)
-                // script.js가 이미 로드되어 있으므로 CardSwiper 클래스를 사용 가능
-                new CardSwiper(tinderList, window.tinderData);
-                
-                // 13. 버튼 상태 복구
-                if (btn) {
-                    btn.textContent = "정책 카드 더보기";
-                    btn.disabled = false;
-                    btn.style.opacity = "";
-                    btn.style.cursor = "";
-                }
-                
-            } catch (error) {
-                console.error("카드 로드 실패:", error);
-                alert("카드를 불러오는 중 오류가 발생했습니다.");
-                // 버튼 상태 복구
-                if (btn) {
-                    btn.textContent = "정책 카드 더보기";
-                    btn.disabled = false;
-                }
+
+        } catch (error) {
+            console.error("카드 로드 실패:", error);
+            alert("카드를 불러오는 중 오류가 발생했습니다.");
+            // 버튼 상태 복구
+            if (btn) {
+                btn.textContent = "정책 카드 더보기";
+                btn.disabled = false;
             }
         }
-        
-        // 페이지 로드 시 데이터 없음 상태 처리
-        document.addEventListener("DOMContentLoaded", () => {
-            // 데이터 없음 상태 처리
-            if (!window.tinderData || window.tinderData.length === 0) {
-                // MutationObserver로 버튼이 나타날 때까지 기다림
-                const checkAndDisableButton = () => {
-                    const loadMoreBtn = document.querySelector('.load-more-cards-btn');
-                    if (loadMoreBtn) {
-                        loadMoreBtn.textContent = "더 이상 카드가 없습니다";
-                        loadMoreBtn.disabled = true;
-                        loadMoreBtn.style.opacity = "0.5";
-                        loadMoreBtn.style.cursor = "not-allowed";
-                    } else {
-                        // 버튼이 아직 나타나지 않았으면 다시 시도
-                        setTimeout(checkAndDisableButton, 100);
-                    }
-                };
-                
-                // 초기 체크
-                checkAndDisableButton();
-            }
-        });
-    </script>
+    }
+
+    // 페이지 로드 시 데이터 없음 상태 처리
+    document.addEventListener("DOMContentLoaded", () => {
+        // 데이터 없음 상태 처리
+        if (!window.tinderData || window.tinderData.length === 0) {
+            // MutationObserver로 버튼이 나타날 때까지 기다림
+            const checkAndDisableButton = () => {
+                const loadMoreBtn = document.querySelector('.load-more-cards-btn');
+                if (loadMoreBtn) {
+                    loadMoreBtn.textContent = "더 이상 카드가 없습니다";
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.style.opacity = "0.5";
+                    loadMoreBtn.style.cursor = "not-allowed";
+                } else {
+                    // 버튼이 아직 나타나지 않았으면 다시 시도
+                    setTimeout(checkAndDisableButton, 100);
+                }
+            };
+
+            // 초기 체크
+            checkAndDisableButton();
+        }
+    });
+</script>
 
 </body>
 

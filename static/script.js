@@ -32,7 +32,7 @@ window.loadUserProfile = function () {
             // 1) 이름 & 이메일
             const nameEl = document.getElementById('user-profile-name');
             const emailEl = document.getElementById('user-profile-email');
-            if (nameEl) nameEl.innerText = `${data.name} 님 👋`;
+            if (nameEl) nameEl.innerText = `${data.name} 님`;
             if (emailEl) emailEl.innerText = data.email;
 
             // 2) 뱃지
@@ -53,7 +53,7 @@ window.loadUserProfile = function () {
             const progressBarEl = document.getElementById('activity-progress-bar');
 
             if (scoreTextEl) {
-                scoreTextEl.innerHTML = `${data.activity_index}% <span class="text-sm font-normal text-gray-500">${data.level_badge}</span>`;
+                scoreTextEl.innerHTML = `${data.activity_index}% <span class="text-base font-bold text-gray-500">${data.level_badge}</span>`;
             }
             if (progressBarEl) {
                 const width = Math.min(data.activity_index, 100);
@@ -62,11 +62,10 @@ window.loadUserProfile = function () {
 
             // 4) 카운트
             const likeCountEl = document.getElementById('user-like-count');
-            const applyCountEl = document.getElementById('user-apply-count');
+            const closingCountEl = document.getElementById('user-closing-count');
 
             if (likeCountEl) likeCountEl.innerText = data.like_count;
-            if (likeCountEl) likeCountEl.innerText = data.like_count;
-            if (applyCountEl) applyCountEl.innerText = data.apply_count;
+            if (closingCountEl) closingCountEl.innerText = data.closing_soon_count || 0;
 
             // 5) 프로필 아이콘
             const profileImg = document.getElementById('user-profile-img');
@@ -989,12 +988,20 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --------------------------------------------------------
-    // [NEW] MyPage Manager (찜한 정책 관리)
+    // [NEW] MyPage Manager (찜한 정책 관리 + 필터링)
     // --------------------------------------------------------
     const MyPageManager = {
         isEditMode: false,
         currentPage: 1,
         itemsPerPage: 12,
+
+        // [NEW] Filter States
+        currentKeyword: '',
+        currentCategory: null,
+        currentRegion: null,
+        currentSort: 'latest',
+
+        // Core Elements
         btnManage: document.getElementById('btn-manage-likes'),
         editControls: document.getElementById('edit-controls'),
         checkAll: document.getElementById('check-all-likes'),
@@ -1002,19 +1009,37 @@ document.addEventListener("DOMContentLoaded", () => {
         listContainer: document.getElementById('mypage-list'),
         paginationContainer: document.getElementById('pagination-container'),
 
+        // [NEW] Search & Filter Elements
+        btnToggleSearch: document.getElementById('btn-toggle-search'),
+        searchBar: document.getElementById('mypage-search-bar'),
+        inputSearch: document.getElementById('mypage-search-input'),
+
+        btnCategory: document.getElementById('btn-filter-category'),
+        dropdownCategory: document.getElementById('dropdown-category'),
+        labelCategory: document.getElementById('label-category'),
+
+        btnRegion: document.getElementById('btn-filter-region'),
+        labelRegion: document.getElementById('label-region'),
+
+        btnSort: document.getElementById('btn-filter-sort'),
+        dropdownSort: document.getElementById('dropdown-sort'),
+        labelSort: document.getElementById('label-sort'),
+
         init: function () {
-            // 초기 찜 목록 로드 (이제 API가 변경되었으므로 여기서 호출)
+            // 초기 로드
             if (this.listContainer) {
                 this.fetchLikes(1);
             }
 
-            if (!this.btnManage) return;
-            this.bindEvents();
+            this.bindEvents(); // 기존 편집 모드 이벤트
+            this.bindFilterEvents(); // 신규 필터 이벤트
         },
 
         bindEvents: function () {
             // Toggle Edit Mode
-            this.btnManage.addEventListener('click', () => this.toggleEditMode());
+            if (this.btnManage) {
+                this.btnManage.addEventListener('click', () => this.toggleEditMode());
+            }
 
             // Select All
             if (this.checkAll) {
@@ -1030,7 +1055,124 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         },
 
-        // [NEW] API 데이터 로드 (페이지네이션 지원)
+        bindFilterEvents: function () {
+            // 1. Toggle Search Bar
+            if (this.btnToggleSearch) {
+                this.btnToggleSearch.addEventListener('click', () => {
+                    this.searchBar.classList.toggle('hidden');
+                });
+            }
+
+            // 2. Search Input (Enter Key)
+            if (this.inputSearch) {
+                this.inputSearch.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.currentKeyword = e.target.value;
+                        this.fetchLikes(1);
+                    }
+                });
+            }
+
+            // 3. Category Dropdown
+            if (this.btnCategory) {
+                this.btnCategory.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.dropdownCategory.classList.toggle('hidden');
+                    this.dropdownSort?.classList.add('hidden');
+                });
+            }
+
+            // 4. Sort Dropdown
+            if (this.btnSort) {
+                this.btnSort.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.dropdownSort.classList.toggle('hidden');
+                    this.dropdownCategory?.classList.add('hidden');
+                });
+            }
+
+            // 5. Region Modal Open
+            if (this.btnRegion) {
+                this.btnRegion.addEventListener('click', () => {
+                    const modal = document.getElementById('region-modal');
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+                    }
+                });
+            }
+
+            // 6. Region Modal Close
+            const regionCloseBtn = document.getElementById('region-modal-close');
+            if (regionCloseBtn) {
+                regionCloseBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('region-modal');
+                    if (modal) {
+                        modal.classList.add('opacity-0');
+                        setTimeout(() => modal.classList.add('hidden'), 300);
+                    }
+                });
+            }
+
+            // 7. Region Selection (Button inside Modal)
+            const regionModal = document.getElementById('region-modal');
+            if (regionModal) {
+                regionModal.addEventListener('click', (e) => {
+                    // button or button child clicked
+                    const btn = e.target.closest('.region-option-btn');
+                    if (btn) {
+                        const region = btn.dataset.region;
+                        this.selectRegion(region);
+
+                        // Close modal
+                        regionModal.classList.add('opacity-0');
+                        setTimeout(() => regionModal.classList.add('hidden'), 300);
+                    }
+                });
+            }
+
+            // 8. Global Click (Close Dropdowns)
+            document.addEventListener('click', (e) => {
+                if (this.dropdownCategory && !this.dropdownCategory.contains(e.target) && !this.btnCategory.contains(e.target)) {
+                    this.dropdownCategory.classList.add('hidden');
+                }
+                if (this.dropdownSort && !this.dropdownSort.contains(e.target) && !this.btnSort.contains(e.target)) {
+                    this.dropdownSort.classList.add('hidden');
+                }
+            });
+
+            // 9. Global Helper Functions for HTML inline usage
+            // (onclick="selectCategory...") needs to access MyPageManager instance methods.
+            // Since MyPageManager is const, we can expose it or attach handlers to window.
+            window.selectCategory = (cat) => {
+                this.currentCategory = cat === '전체' ? null : cat;
+                if (this.labelCategory) this.labelCategory.innerText = cat;
+                this.dropdownCategory.classList.add('hidden');
+                this.fetchLikes(1);
+            };
+
+            window.selectSort = (sort) => {
+                this.currentSort = sort === 'reset' ? null : sort;
+                const sortLabels = {
+                    'latest': '최신순',
+                    'popular': '인기순',
+                    'deadline': '마감순',
+                    'closed': '마감 정책',
+                    'reset': '정렬'
+                };
+                if (this.labelSort) this.labelSort.innerText = sortLabels[sort] || '정렬';
+                this.dropdownSort.classList.add('hidden');
+                this.fetchLikes(1);
+            };
+        },
+
+        selectRegion: function (region) {
+            this.currentRegion = region === '전체' ? null : region;
+            if (this.labelRegion) this.labelRegion.innerText = region;
+            this.fetchLikes(1);
+        },
+
+        // [NEW] API Call with Filters
         fetchLikes: function (page) {
             const userEmail = localStorage.getItem('userEmail');
             if (!userEmail) {
@@ -1040,36 +1182,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
             this.currentPage = page;
 
-            // 로딩 표시 (선택사항)
-            // if (this.listContainer) this.listContainer.style.opacity = '0.5';
+            // Query Params
+            const params = new URLSearchParams();
+            params.append('user_email', userEmail);
+            params.append('page', page);
+            params.append('limit', this.itemsPerPage);
 
-            fetch(`/api/mypage/likes?user_email=${userEmail}&page=${page}&limit=${this.itemsPerPage}`)
+            if (this.currentKeyword) params.append('keyword', this.currentKeyword);
+            if (this.currentCategory) params.append('category', this.currentCategory);
+            if (this.currentRegion) params.append('region', this.currentRegion);
+            if (this.currentSort) params.append('sort', this.currentSort);
+
+            fetch(`/api/mypage/likes?${params.toString()}`)
                 .then(res => res.json())
                 .then(data => {
-                    // if (this.listContainer) this.listContainer.style.opacity = '1';
-
                     const policies = data.policies || [];
                     const totalCount = data.total_count || 0;
 
                     if (policies.length === 0) {
-                        // 데이터 없음
-                        if (this.listContainer) this.listContainer.innerHTML = `<div class="empty-state"><i class="fa-regular fa-folder-open"></i><p>아직 찜한 정책이 없어요.</p></div>`;
+                        if (this.listContainer) this.listContainer.innerHTML = `<div class="empty-state w-full text-center py-10"><i class="fa-regular fa-folder-open text-gray-300 text-4xl mb-4"></i><p class="text-gray-500">조건에 맞는 찜한 정책이 없어요.</p></div>`;
                         if (this.paginationContainer) this.paginationContainer.innerHTML = "";
                     } else {
-                        // 리스트 렌더링
+                        // Render List
                         if (this.listContainer) {
                             this.listContainer.innerHTML = policies.map(item => createCardHTML(item, false)).join('');
                         }
 
-                        // 페이지네이션 렌더링
+                        // Render Pagination
                         this.renderPagination(totalCount);
 
-                        // 편집 모드 유지 중이라면 체크박스 다시 생성
+                        // Edit Mode Re-apply
                         if (this.isEditMode) {
                             this.addCheckboxesToCards();
                         }
 
-                        // 애니메이션
+                        // Animation
                         if (typeof gsap !== 'undefined') {
                             gsap.from("#mypage-list .policy-card", { y: 20, opacity: 0, duration: 0.4, stagger: 0.05, clearProps: "all" });
                         }
@@ -1077,7 +1224,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 })
                 .catch(err => {
                     console.error("Link Load Error:", err);
-                    if (this.listContainer) this.listContainer.innerHTML = `<div class="empty-state"><p>데이터를 불러오는 중 오류가 발생했습니다.</p></div>`;
                 });
         },
 

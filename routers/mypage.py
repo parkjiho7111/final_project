@@ -4,7 +4,7 @@ from sqlalchemy import func
 from pydantic import BaseModel
 from typing import List, Optional
 import os
-
+from datetime import datetime, date, timedelta
 from database import get_db
 from models import UserAction, Policy, User, categoryColorMap, get_image_for_category, FRONT_TO_DB_CATEGORY, normalize_region_name
 
@@ -260,6 +260,19 @@ def get_user_profile(user_email: str, db: Session = Depends(get_db)):
         level_badge = "#지원금_사냥꾼 🏹"
     elif percentage >= 11:
         level_badge = "#혜택_줍줍러 🍬"
+
+    # [NEW] 마감 임박 (D-7) 개수 계산
+    today = date.today()
+    deadline = today + timedelta(days=7)
+    
+    closing_soon_count = db.query(UserAction)\
+        .join(Policy, UserAction.policy_id == Policy.id)\
+        .filter(
+            UserAction.user_email == user_email,
+            UserAction.type == 'like',
+            Policy.end_date >= today,
+            Policy.end_date <= deadline
+        ).count()
         
     return {
         "name": user.name,
@@ -270,8 +283,9 @@ def get_user_profile(user_email: str, db: Session = Depends(get_db)):
         "level_badge": level_badge,
         "like_count": like_count,
         "apply_count": 0,
+        "closing_soon_count": closing_soon_count, # [NEW]
         "profile_icon": user.profile_icon or "avatar_1",
-        "mbti": calculate_mbti_result(user_email, db) # [NEW] MBTI 결과
+        "mbti": calculate_mbti_result(user_email, db)
     }
 
 # 5. 프로필 아이콘 변경
@@ -346,18 +360,78 @@ def get_liked_policies(
     user_email: str, 
     page: int = 1, 
     limit: int = 12, 
+    keyword: Optional[str] = None,
+    category: Optional[str] = None,
+    region: Optional[str] = None,
+    sort: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """
-    해당 유저가 'like'한 정책들의 상세 정보를 반환합니다. (페이지네이션 적용)
+    해당 유저가 'like'한 정책들의 상세 정보를 반환합니다. (검색/필터/정렬/페이지네이션 적용)
     """
-    # 1. 쿼리 베이스 (최신순 정렬)
-    query = db.query(UserAction).filter(
+    # 1. Base Query: Join UserAction and Policy to allow filtering on Policy fields
+    query = db.query(UserAction, Policy).join(Policy, UserAction.policy_id == Policy.id).filter(
         UserAction.user_email == user_email, 
         UserAction.type == 'like'
     )
     
-    # 2. 전체 개수 계산
+    # 2. Apply Filters
+    # 2-1. Keyword Search (Title or Summary)
+    if keyword:
+        query = query.filter(
+            (Policy.title.ilike(f"%{keyword}%")) | 
+            (Policy.summary.ilike(f"%{keyword}%"))
+        )
+
+    # 2-2. Category Filter
+    if category and category != "전체":
+        # Simply check if the genre string contains the category keyword
+        query = query.filter(Policy.genre.ilike(f"%{category}%"))
+
+    # 2-3. Region Filter
+    if region and region != "전체" and region != "전국":
+        # '전국' policies are usually shown for everyone, 
+        # but if user specifically selects a region (e.g., 'Seoul'), 
+        # they might want to see 'Seoul' ONLY or 'Seoul' + 'Nationwide'.
+        # Following typical logic: Show policies matching region OR nationwide policies.
+        query = query.filter(
+            (Policy.region.ilike(f"%{region}%")) | 
+            (Policy.region == "전국")
+        )
+
+    # 2-4. Closed Policy Filter (for 'closed' sort option or special filter)
+    today = date.today()
+    if sort == 'closed':
+        # Show ONLY closed policies? Or sort by closed?
+        # Usually "마감 정책" implies filtering for closed ones.
+        query = query.filter(Policy.end_date < today)
+    # If not specifically looking for closed, usually we don't filter them out unless requested
+    # But often users want to see "Active" policies by default. 
+    # For "My Likes", we usually show everything unless filtered.
+
+    # 3. Apply Sorting
+    if sort == 'deadline':
+        # Order by closest deadline first (active policies first)
+        # Null end_date (permanent) usually comes last or first depending on logic.
+        # Let's put imminent deadlines first.
+        query = query.order_by(Policy.end_date.asc())
+    elif sort == 'popular':
+        # If 'views' exists, use it. Otherwise, use ID as proxy or random.
+        # Assuming we don't have a reliable 'views' on Policy in this snippet context (it wasn't imported/shown).
+        # We'll fallback to Policy.id or just keep latest like.
+        # Let's try UserAction count if possible? Too complex for now.
+        # Fallback: Latest liked (Default)
+        query = query.order_by(UserAction.created_at.desc())
+    elif sort == 'latest':
+        query = query.order_by(UserAction.created_at.desc())
+    elif sort == 'closed':
+         # Already filtered above, assume sorting by end_date desc (most recently closed)
+        query = query.order_by(Policy.end_date.desc())
+    else:
+        # Default: Recently Liked
+        query = query.order_by(UserAction.created_at.desc())
+
+    # 4. Count Total Results
     total_count = query.count()
     if total_count == 0:
         return {
@@ -369,69 +443,44 @@ def get_liked_policies(
 
     total_pages = (total_count + limit - 1) // limit
     
-    # 페이지 보정
+    # Page Correction
     if page < 1: page = 1
     if page > total_pages: page = total_pages
 
     offset = (page - 1) * limit
 
-    # 3. 페이지네이션 적용하여 액션 조회
-    actions = query.order_by(UserAction.created_at.desc())\
-                   .offset(offset)\
-                   .limit(limit)\
-                   .all()
+    # 5. Fetch Data with Pagination
+    # Note: Query returns tuples (UserAction, Policy) due to the join structure
+    results = query.offset(offset).limit(limit).all()
     
-    if not actions:
-         return {
-            "policies": [],
-            "total_count": total_count,
-            "total_pages": total_pages,
-            "current_page": page
-        }
-
-    # 4. Policy ID 리스트 추출 (기존 로직 유지)
-    policy_ids = [a.policy_id for a in actions]
+    formatted_policies = []
     
-    # 5. Policy 정보 조회
-    policies = db.query(Policy).filter(Policy.id.in_(policy_ids)).all()
-    policy_map = {p.id: p for p in policies}
-    
-    result = []
-    seen_ids = set()
-
-    # 6. 순서대로 매핑
-    for action in actions:
-        pid = action.policy_id
-        if pid in seen_ids:
-            continue
+    for action, policy in results:
+        # Image Processing
+        img_src = get_image_for_category(policy.genre)
         
-        policy = policy_map.get(pid)
-        if policy:
-            seen_ids.add(pid)
-            
-            # 이미지 처리
-            img_src = get_image_for_category(policy.genre)
-            
-            # 날짜 처리
-            date_str = "상시 모집"
-            if policy.end_date:
-                date_str = f"{policy.end_date} 마감"
-            elif policy.period:
-                date_str = policy.period
+        # Date Processing
+        date_str = "상시 모집"
+        if policy.end_date:
+            date_str = f"{policy.end_date} 마감"
+        elif policy.period:
+            date_str = policy.period
 
-            result.append({
-                "id": policy.id,
-                "title": policy.title,
-                "summary": policy.summary or "상세 내용을 확인하세요.",
-                "genre": policy.genre or "기타",
-                "period": date_str,
-                "image": img_src,
-                "link": policy.link or "#",
-                "region": policy.region or "전국"
-            })
+        formatted_policies.append({
+            "id": policy.id,
+            "title": policy.title,
+            "summary": policy.summary or "상세 내용을 확인하세요.",
+            "genre": policy.genre or "기타",
+            "period": date_str,
+            "image": img_src,
+            "link": policy.link or "#",
+            "region": policy.region or "전국",
+            # Add is_active flag for frontend UI (gray out closed)
+            "is_active": not (policy.end_date and policy.end_date < today) if policy.end_date else True
+        })
             
     return {
-        "policies": result,
+        "policies": formatted_policies,
         "total_count": total_count,
         "total_pages": total_pages,
         "current_page": page

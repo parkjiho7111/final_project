@@ -87,7 +87,7 @@
 
     <main class="max-w-[1200px] mx-auto px-5 py-10">
         <header class="text-center mb-16">
-            <h1 class="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">정책 카드 컬렉션 ✨</h1>
+            <h1 class="text-3xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">정책 카드 컬렉션</h1>
             <p class="text-gray-500 text-lg mb-5">마우스를 올려보세요! 화면 크기에 맞춰 카드가 반응합니다.</p>
 
             <div class="max-w-2xl mx-auto mb-6">
@@ -114,10 +114,9 @@
                         <div class="h-8 w-px bg-gray-200 mx-2 flex-shrink-0"></div>
                         <!-- 정렬 버튼 -->
                         <button id="sort-btn"
-                            class="shrink-0 py-2 h-full text-gray-600 text-sm font-bold transition-all flex items-center gap-1"
-                            style="min-width: 73px; width: 73px; padding-left: 6px; padding-right: 4px;">
+                            class="shrink-0 pl-4 pr-6 py-2 h-full text-gray-600 text-sm font-bold transition-all flex items-center gap-1">
                             <i class="fa-solid fa-sort" style="flex-shrink: 0;"></i> <span class="sort-text"
-                                style="display: inline-block; width: 3ch; text-align: left; flex: 1;">정렬</span>
+                                style="display: inline-block; width: auto; text-align: left; flex: 1;">정렬</span>
                         </button>
 
                         <!-- 최근 검색어 목록 -->
@@ -1285,13 +1284,17 @@
                     const selectedSort = btn.dataset.sort;
                     console.log('선택된 정렬:', selectedSort);
 
+                    // DOM 요소 가져오기
+                    const searchInput = document.getElementById('search-input');
+                    const clearBtn = document.getElementById('clear-btn');
+
                     // 정렬 버튼의 텍스트를 선택한 정렬 방식으로 변경
                     if (sortBtn) {
-                        // 버튼 크기 고정 유지
-                        sortBtn.style.minWidth = '73px';
-                        sortBtn.style.width = '73px';
-                        sortBtn.style.paddingLeft = '6px';
-                        sortBtn.style.paddingRight = '4px';
+                        // 버튼 크기 유동적으로 변경 (고정폭 제거)
+                        sortBtn.style.minWidth = 'auto';
+                        sortBtn.style.width = 'auto';
+                        sortBtn.style.paddingLeft = '1rem'; // pl-4
+                        sortBtn.style.paddingRight = '1.5rem'; // pr-6
 
                         // 기존 스타일 초기화
                         sortBtn.style.fontSize = '';
@@ -1303,15 +1306,41 @@
                         const icon = '<i class="fa-solid fa-sort" style="flex-shrink: 0;"></i>';
                         let textContent = '';
 
+                        // 레이아웃 리셋 Helper
+                        const resetLayout = () => {
+                            if (searchInput) searchInput.classList.replace('pr-56', 'pr-44'); // 원상복구 (Tailwind 클래스 조작이 안전)
+                            if (clearBtn) clearBtn.classList.replace('right-56', 'right-44');
+
+                            // 혹시 style로 덮어쓰여졌을 경우를 대비해 style 초기화 (또는 Tailwind 클래스 토글)
+                            // 여기서는 Tailwind Class 교체 방식이 깔끔함. html에 기본이 pr-44, right-44임.
+                            // 만약 style로 조정해야 한다면:
+                            // if (searchInput) searchInput.style.paddingRight = '';
+                            // if (clearBtn) clearBtn.style.right = '';
+                        };
+
+                        // 레이아웃 확장 Helper ("마감 정책" 처럼 길어질 때)
+                        const expandLayout = () => {
+                            if (searchInput) {
+                                searchInput.classList.remove('pr-44');
+                                searchInput.classList.add('pr-56');
+                            }
+                            if (clearBtn) {
+                                clearBtn.classList.remove('right-44');
+                                clearBtn.classList.add('right-56');
+                            }
+                        };
+
+
                         if (selectedSort === 'reset') {
                             // 원래대로
                             textContent = '정렬';
                             selectedSortValue = null;
                             clearSortSelection();
+                            resetLayout(); // 레이아웃 초기화
 
                             // 정렬 초기화: 현재 카테고리와 검색어 유지하면서 정렬만 초기화
                             const currentCategory = currentCategoryFilter || 'all';
-                            const keyword = document.getElementById('search-input') ? document.getElementById('search-input').value : '';
+                            const keyword = searchInput ? searchInput.value : '';
                             currentPage = 1; // 1페이지로 리셋
                             console.log(`🔄 정렬 초기화: 카테고리=${currentCategory}, 검색어=${keyword}`);
                             await renderCards(currentCategory, keyword, false, null);
@@ -1323,19 +1352,22 @@
                             setSortSelection(selectedSort);
 
                             if (selectedSort === 'latest') {
-                                // 최신순: 그대로 표시
                                 textContent = '최신순';
+                                resetLayout();
                             } else if (selectedSort === 'popular') {
-                                // 인기순: 그대로 표시
                                 textContent = '인기순';
+                                resetLayout();
                             } else if (selectedSort === 'deadline') {
-                                // 마감순: 그대로 표시
                                 textContent = '마감순';
+                                resetLayout();
+                            } else if (selectedSort === 'closed') {
+                                textContent = '마감 정책';
+                                expandLayout(); // 레이아웃 확장
                             }
                         }
 
-                        // 아이콘과 텍스트를 분리하여 아이콘 위치 고정, 텍스트 영역 크기 고정 (3글자)
-                        sortBtn.innerHTML = `${icon} <span class="sort-text" style="display: inline-block; width: 3ch; text-align: left; flex: 1;">${textContent}</span>`;
+                        // 아이콘과 텍스트를 분리하여 아이콘 위치 고정, 텍스트 영역 유동적
+                        sortBtn.innerHTML = `${icon} <span class="sort-text" style="display: inline-block; width: auto; text-align: left; flex: 1;">${textContent}</span>`;
                     }
 
                     // 정렬 적용: 현재 필터와 검색어 유지하면서 정렬만 변경
