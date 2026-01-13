@@ -32,7 +32,7 @@ window.loadUserProfile = function () {
             // 1) 이름 & 이메일
             const nameEl = document.getElementById('user-profile-name');
             const emailEl = document.getElementById('user-profile-email');
-            if (nameEl) nameEl.innerText = `${data.name} 님 👋`;
+            if (nameEl) nameEl.innerText = `${data.name} 님`;
             if (emailEl) emailEl.innerText = data.email;
 
             // 2) 뱃지
@@ -53,7 +53,7 @@ window.loadUserProfile = function () {
             const progressBarEl = document.getElementById('activity-progress-bar');
 
             if (scoreTextEl) {
-                scoreTextEl.innerHTML = `${data.activity_index}% <span class="text-sm font-normal text-gray-500">${data.level_badge}</span>`;
+                scoreTextEl.innerHTML = `${data.activity_index}% <span class="text-base font-bold text-gray-500">${data.level_badge}</span>`;
             }
             if (progressBarEl) {
                 const width = Math.min(data.activity_index, 100);
