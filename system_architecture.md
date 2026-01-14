@@ -27,12 +27,12 @@ graph TD
     %% Sub-components within AppServer (Logical View)
     subgraph Backend_Modules [Backend Modules]
         direction TB
-        Auth[Auth Router<br/>(auth.py)]
-        MainPage[Main Router<br/>(main_page.py)]
-        MyPage[My Page Router<br/>(mypage.py)]
-        AllPage[Search/Filter Router<br/>(all.py)]
-        RecSys[Recommendation Engine<br/>(recommendation.py)]
-        Shared[Database Session<br/>(database.py)]
+        Auth["Auth Router<br/>(auth.py)"]
+        MainPage["Main Router<br/>(main_page.py)"]
+        MyPage["My Page Router<br/>(mypage.py)"]
+        AllPage["Search/Filter Router<br/>(all.py)"]
+        RecSys["Recommendation Engine<br/>(recommendation.py)"]
+        Shared["Database Session<br/>(database.py)"]
     end
     
     %% Connect AppServer to Logical Components
