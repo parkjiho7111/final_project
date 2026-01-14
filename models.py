@@ -128,6 +128,9 @@ def normalize_region_name(region):
 # 4. 카테고리별 이미지 선택 함수
 def get_image_for_category(category: str) -> str:
     cat_code = "welfare"
+    if not category:  # Handle None or empty string
+        category = ""
+        
     if "주거" in category:
         cat_code = "housing"
     elif "금융" in category:

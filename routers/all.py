@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from database import SessionLocal
-from models import Policy
+from models import Policy, get_image_for_category
 
 # 라우터 생성
 router = APIRouter()
@@ -78,21 +78,7 @@ def normalize_region_name(input_str: str) -> str:
         
     return input_str
 
-def get_image_for_category(category: str) -> str:
-    """카테고리에 맞는 랜덤 이미지 URL 반환"""
-    cat_code = "welfare"
-    if "주거" in category:
-        cat_code = "housing"
-    elif "취업" in category or "일자리" in category:
-        cat_code = "job"
-    elif "금융" in category:
-        cat_code = "finance"
-    elif "창업" in category:
-        cat_code = "startup"
-    elif "교육" in category:
-        cat_code = "growth"
-    
-    return f"/static/images/card_images/{cat_code}_{random.randint(1, 5)}.webp"
+
 
 # ==================== [라우터 엔드포인트] ====================
 

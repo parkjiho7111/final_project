@@ -12,39 +12,44 @@ This document illustrates the primary use cases for the **Being Geul Youth Polic
 ## Use Case Diagram (Mermaid)
 
 ```mermaid
-usecaseDiagram
-    %% Actor Definitions
-    actor "Guest" as G
-    actor "User" as U
-    actor "Admin" as A
+graph LR
+    %% Styles
+    classDef actor fill:#f9f9f9,stroke:#333,stroke-width:2px;
+    classDef usecase fill:#fff,stroke:#333,stroke-width:1px,stroke-dasharray: 0;
+
+    %% Actors
+    G[Guest]:::actor
+    U[User]:::actor
+    A[Admin]:::actor
 
     %% System Boundary
-    package "Being Geul Platform" {
+    subgraph System ["Being Geul Platform"]
+        direction TB
         
         %% Guest Use Cases
-        usecase "View Landing Page" as UC_ViewLanding
-        usecase "Sign Up" as UC_SignUp
-        usecase "Login" as UC_Login
+        UC_ViewLanding([View Landing Page])
+        UC_SignUp([Sign Up])
+        UC_Login([Login])
         
         %% Main Discovery
-        usecase "View Main Recommendations" as UC_ViewMain
-        usecase "Swipe Policies (Like/Pass)" as UC_Swipe
-        usecase "View Policy Details (Modal)" as UC_ViewDetail
+        UC_ViewMain([View Main Recommendations])
+        UC_Swipe([Swipe Policies Like/Pass])
+        UC_ViewDetail([View Policy Details])
         
         %% Search & Filter
-        usecase "Search Policies" as UC_Search
-        usecase "Filter by Region/Genre" as UC_Filter
+        UC_Search([Search Policies])
+        UC_Filter([Filter by Region/Genre])
         
-        %% My Page / Personalization
-        usecase "View My Page" as UC_MyPage
-        usecase "Manage Liked Policies" as UC_ManageLikes
-        usecase "View Policy MBTI" as UC_ViewMBTI
-        usecase "Edit Profile / Avatar" as UC_EditProfile
+        %% My Page
+        UC_MyPage([View My Page])
+        UC_ManageLikes([Manage Liked Policies])
+        UC_ViewMBTI([View Policy MBTI])
+        UC_EditProfile([Edit Profile / Avatar])
         
         %% Admin
-        usecase "Manage Policy Data" as UC_ManagePolicy
-        usecase "View User Stats" as UC_ViewStats
-    }
+        UC_ManagePolicy([Manage Policy Data])
+        UC_ViewStats([View User Stats])
+    end
 
     %% Relationships - Guest
     G --> UC_ViewLanding
@@ -62,18 +67,18 @@ usecaseDiagram
     U --> UC_ViewMBTI
     U --> UC_EditProfile
 
-    %% Inheritance: User can do everything a Guest can (conceptually)
-    G <|-- U
+    %% Inheritance representation (User extends Guest behavior)
+    G -.-> U
 
     %% Relationships - Admin
     A --> UC_Login
     A --> UC_ManagePolicy
     A --> UC_ViewStats
     
-    %% Include/Extend relationships
-    UC_Search ..> UC_Filter : <<include>>
-    UC_ViewMain ..> UC_ViewDetail : <<extend>>
-    UC_Swipe ..> UC_ViewDetail : <<extend>>
+    %% Functional Relationships
+    UC_Search -.->|include| UC_Filter
+    UC_ViewMain -.->|extend| UC_ViewDetail
+    UC_Swipe -.->|extend| UC_ViewDetail
 ```
 
 ## Key Workflows
