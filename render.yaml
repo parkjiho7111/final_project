@@ -5,16 +5,28 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      # 데이터베이스 연결 정보 (Render가 자동으로 설정)
       - key: DB_HOST
-        sync: false
+        fromDatabase:
+          name: being-geul-db
+          property: host
       - key: DB_PORT
-        sync: false
+        fromDatabase:
+          name: being-geul-db
+          property: port
       - key: DB_NAME
-        sync: false
+        fromDatabase:
+          name: being-geul-db
+          property: database
       - key: DB_USER
-        sync: false
+        fromDatabase:
+          name: being-geul-db
+          property: user
       - key: DB_PASSWORD
-        sync: false
+        fromDatabase:
+          name: being-geul-db
+          property: password
+      # OAuth 환경 변수 (수동 설정 필요)
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET
