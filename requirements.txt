@@ -19,6 +19,7 @@ googleapis-common-protos==1.72.0
 greenlet==3.2.4
 grpcio==1.76.0
 grpcio-status==1.71.2
+gunicorn==23.0.0
 h11==0.16.0
 httpcore==1.0.9
 httplib2==0.31.0
@@ -29,6 +30,7 @@ itsdangerous==2.2.0
 Jinja2==3.0.3
 MarkupSafe==3.0.3
 numpy==2.3.4
+packaging==25.0
 passlib==1.7.4
 pgvector==0.4.1
 proto-plus==1.26.1
