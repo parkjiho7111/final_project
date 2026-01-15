@@ -12,7 +12,14 @@ from database import engine
 from routers import landing, auth, about, main_page, all, mypage, admin, recommendation
 
 # [중요 3] 서버 시작 시 DB에 없는 테이블(users 등) 자동 생성
-models.Base.metadata.create_all(bind=engine)
+# DB 연결 실패 시에도 서버는 시작되도록 에러 핸들링 추가
+try:
+    models.Base.metadata.create_all(bind=engine)
+    print("✅ 데이터베이스 연결 성공 및 테이블 확인 완료")
+except Exception as e:
+    print(f"⚠️ 데이터베이스 연결 실패: {e}")
+    print("⚠️ 서버는 시작되지만 데이터베이스 기능은 사용할 수 없습니다.")
+    print("💡 해결 방법: PostgreSQL 서버(Docker 컨테이너)를 시작하거나 .env 파일의 DB_HOST를 확인하세요.")
 
 app = FastAPI()
 
@@ -64,4 +71,4 @@ async def read_all_policies(request: Request):
 if __name__ == "__main__":
     import uvicorn
     # reload=True는 코드 수정 시 자동 재시작 기능 (개발용)
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8001, reload=True)
