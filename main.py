@@ -70,8 +70,8 @@ async def read_all_policies(request: Request):
 # 이 코드가 있어야 'python main.py'로 실행했을 때 서버가 켜집니다.
 if __name__ == "__main__":
     import uvicorn
-    # Render 배포 시 포트는 환경 변수에서 가져옴, 로컬에서는 8001 사용
+    # Railway 등에서 PORT 환경 변수 제공, 없으면 8001 사용
     port = int(os.getenv("PORT", 8001))
-    # reload=True는 코드 수정 시 자동 재시작 기능 (개발용, 프로덕션에서는 False)
+    # 프로덕션 환경에서는 reload 비활성화
     reload = os.getenv("ENV") != "production"
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=reload)
