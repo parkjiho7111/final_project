@@ -2,7 +2,7 @@ services:
   - type: web
     name: being-geul-platform
     env: python
-    buildCommand: python3 -m pip install --upgrade pip && python3 -m pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       # 데이터베이스 연결 정보 (Render가 자동으로 설정)
